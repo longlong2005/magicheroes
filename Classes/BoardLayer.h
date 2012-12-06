@@ -13,6 +13,7 @@ public:
     static BoardLayer* create();
 
     void draw();
+    void update();
 
     virtual void onEnter();
     virtual void onExit();
@@ -41,10 +42,14 @@ protected:
     int lastTouchedY;
 
     void rearrange();
-    //void moveToTop(Soldier* board[][BOARD_HEIGHT], int x, int y);
+    
     int moveToTop(Soldier*** board, int x, int y);
 
     CCRect atkBoardRect();
+
+private:
+    CCPoint atkPosition(int x, int y);
+    CCPoint dfnPosition(int x, int y);
 
 protected:
 	BoardLayer();

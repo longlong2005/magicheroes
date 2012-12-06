@@ -28,8 +28,11 @@ BattleScene* BattleScene::create()
         CC_BREAK_IF(!layer);
 
         scene->addChild(layer, 1);
+        scene->autorelease();
+
+        return scene;
 
 	} while(0);
 
-	return scene;
+	return NULL;
 }

@@ -21,9 +21,13 @@ Soldier* Soldier::create()
 
         CC_BREAK_IF(!soldier->init());
 
+        soldier->autorelease();
+
+        return soldier;
+
 	} while(0);
 
-	return soldier;
+	return NULL;
 }
 
 bool Soldier::init()
@@ -64,14 +68,12 @@ void Soldier::draw()
     switch (state)
     {
     case StateStand:
-        sprite->setScale(0.8f);
-        sprite->setAnchorPoint(CCPointMake(0.2f, 0.15f));
+
         break;
 
     case StateSelected:
         {
-        sprite->setScale(1.6f);
-        sprite->setAnchorPoint(CCPointMake(0.32f, 0.3f));
+
 
         CCPoint origin = getPosition();
         //ccDrawSolidRect(CCPointMake(0, -960), CCPointMake(0 + 56, 960), ccc4f(255,0,0,8));
@@ -108,10 +110,16 @@ void Soldier::ccTouchEnded(CCTouch* touch, CCEvent* event)
 
 void Soldier::selected()
 {
+    sprite->setScale(1.6f);
+    sprite->setAnchorPoint(CCPointMake(0.32f, 0.3f));
+
     state = StateSelected;
 }
 
 void Soldier::stand()
 {
+    sprite->setScale(0.8f);
+    sprite->setAnchorPoint(CCPointMake(0.2f, 0.15f));
+    
     state = StateStand;
 }

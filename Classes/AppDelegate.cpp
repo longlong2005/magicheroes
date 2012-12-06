@@ -1,8 +1,9 @@
 #include "cocos2d.h"
+#include "vld.h"
 #include "CCEGLView.h"
+#include "Global.h"
+#include "AnimationManager.h"
 #include "AppDelegate.h"
-//#include "Global.h"
-//#include "AnimationManager.h"
 #include "HelloWorldScene.h"
 #include "BattleScene.h"
 #include "SimpleAudioEngine.h"
@@ -18,6 +19,9 @@ AppDelegate::AppDelegate()
 AppDelegate::~AppDelegate()
 {
     SimpleAudioEngine::end();
+
+    GLOBAL->release();
+    ANIMATION_MGR->release();
 }
 
 bool AppDelegate::applicationDidFinishLaunching()
