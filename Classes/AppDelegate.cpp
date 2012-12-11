@@ -7,6 +7,7 @@
 #include "HelloWorldScene.h"
 #include "BattleScene.h"
 #include "SimpleAudioEngine.h"
+#include "GameMainMenu.h"
 
 using namespace CocosDenshion;
 
@@ -46,10 +47,10 @@ bool AppDelegate::applicationDidFinishLaunching()
 
     // create a scene. it's an autorelease object
     //CCScene *pScene = HelloWorld::scene();
-	CCScene *pScene = BattleScene::create();
+	//CCScene *pScene = BattleScene::create();
 
     // run
-    pDirector->runWithScene(pScene);
+    pDirector->runWithScene(GameMainMenu::create());
     return true;
 }
 

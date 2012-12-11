@@ -23,7 +23,7 @@ BoardLayer::BoardLayer()
                 atkBoard[i][j] = Soldier::create();
                 atkBoard[i][j]->setPosition(atkPosition(i, j));
 
-                GLOBAL->Attackers->addObject(atkBoard[i][j]);
+                //GLOBAL->Attackers->addObject(atkBoard[i][j]);
                 this->addChild(atkBoard[i][j], BOARD_HEIGHT * 2 - j);
             }
 
@@ -32,7 +32,7 @@ BoardLayer::BoardLayer()
                 dfnBoard[i][j] = Soldier::create();
                 dfnBoard[i][j]->setPosition(dfnPosition(i, j));
 
-                GLOBAL->Defenders->addObject(dfnBoard[i][j]);
+                //GLOBAL->Defenders->addObject(dfnBoard[i][j]);
                 this->addChild(dfnBoard[i][j], j);
             }
         }
@@ -43,6 +43,8 @@ BoardLayer::BoardLayer()
 
 BoardLayer::~BoardLayer()
 {
+    //GLOBAL->Attackers->removeAllObjects();
+    //GLOBAL->Defenders->removeAllObjects();
 }
 
 BoardLayer* BoardLayer::create()

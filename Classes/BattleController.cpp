@@ -1,9 +1,12 @@
 #include "BattleController.h"
 #include "Global.h"
 #include "BackGroundLayer.h"
+#include "GameMainMenu.h"
 
 BattleController::BattleController()
 {
+    sprite1 = NULL;
+    sprite2 = NULL;
 }
 
 
@@ -36,13 +39,20 @@ bool BattleController::init()
     CCTexture2D* texture = NULL;
 
     texture = CCTextureCache::sharedTextureCache()->addImage("CloseNormal.png");
-    sprite = CCSprite::createWithTexture(texture);
-    sprite->setAnchorPoint(CCPointMake(0, 0));
-    sprite->setScale(2.0f);
-    sprite->setPosition(CCPointMake(384, 20));
+    sprite1 = CCSprite::createWithTexture(texture);
+    sprite1->setAnchorPoint(CCPointMake(0, 0));
+    sprite1->setScale(2.0f);
+    sprite1->setPosition(CCPointMake(384, 20));
 
-    addChild(sprite);
+    addChild(sprite1);
 
+    texture = CCTextureCache::sharedTextureCache()->addImage("CloseSelected.png");
+    sprite2 = CCSprite::createWithTexture(texture);
+    sprite2->setAnchorPoint(CCPointMake(0, 0));
+    sprite2->setScale(2.0f);
+    sprite2->setPosition(CCPointMake(584, 20));
+
+    addChild(sprite2);
     return true;
 }
 
@@ -65,12 +75,19 @@ bool BattleController::ccTouchBegan(CCTouch* touch, CCEvent* event)
 {
     CCPoint touchPoint = touch->getLocation();
         
-    if (!sprite->boundingBox().containsPoint(touchPoint))
-        return false;
+    if (sprite1->boundingBox().containsPoint(touchPoint))
+    {
+        GLOBAL->BattleBG->nextState();
+        return true;
+    }
+    
+    if (sprite2->boundingBox().containsPoint(touchPoint))
+    {
+        CCDirector::sharedDirector()->replaceScene(CCTransitionSplitRows::create(1.0f, GameMainMenu::create()));
+        return true;
+    }
 
-    GLOBAL->BattleBG->nextState();
-
-    return true;
+    return false;
 }
 
 void BattleController::ccTouchMoved(CCTouch* touch, CCEvent* event)

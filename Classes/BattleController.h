@@ -20,7 +20,8 @@ public:
 protected:
     virtual bool init();
 
-    CCSprite* sprite;
+    CCSprite* sprite1; //background test
+    CCSprite* sprite2; //return game main menu
 
 protected:
     BattleController();
