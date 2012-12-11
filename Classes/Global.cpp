@@ -7,6 +7,7 @@ Global::Global()
     this->Attackers = CCArray::create();
     this->Defenders = CCArray::create();
 
+    BattleBG = NULL;
 }
 
 

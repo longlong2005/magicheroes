@@ -53,7 +53,7 @@ void Soldier::draw()
     CCNode::draw();
 
     CHECK_GL_ERROR_DEBUG();
-    glEnable(GL_LINE_SMOOTH);
+    //glEnable(GL_LINE_SMOOTH);
 /*
     CCRect rect = sprite->boundingBox();
     ccDrawColor4B(255,255,255,255);

@@ -34,8 +34,8 @@ bool AppDelegate::applicationDidFinishLaunching()
     // enable High Resource Mode(2x, such as iphone4) and maintains low resource on other devices.
 //     pDirector->enableRetinaDisplay(true);
     //eglView->setDesignResolutionSize(480,720,kResolutionExactFit);
-    eglView->setDesignResolutionSize(640,960,kResolutionExactFit);
-    
+    //eglView->setDesignResolutionSize(640,960,kResolutionExactFit);
+    eglView->setDesignResolutionSize(768,1024,kResolutionExactFit);
     //
 
     // turn on display FPS

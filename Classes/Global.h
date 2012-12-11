@@ -7,12 +7,15 @@
 USING_NS_CC;
 
 class Soldier;
+class BackGroundLayer;
 
 class Global : public Singleton<Global>
 {
 public:
     CCArray* Attackers;
     CCArray* Defenders;
+
+    BackGroundLayer* BattleBG;
 
     DECLARE_SINGLETON(Global); //private
 };

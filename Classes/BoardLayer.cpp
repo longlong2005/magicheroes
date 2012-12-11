@@ -1,6 +1,8 @@
 #include "BoardLayer.h"
 #include "Global.h"
 #include "Soldier.h"
+#include "Spriter\SpriterNode.h"
+#include "Spriter\CCSpriterX.h"
 
 BoardLayer::BoardLayer()
 {
@@ -64,7 +66,43 @@ BoardLayer* BoardLayer::create()
             layer->addChild((Soldier*)defender);
         }
         */
+      /*
+        SpriterNode *n = SpriterNode::create( "Example.SCML" );
+     
+    n->setPosition( ccp(200, 100) );
+    n->runAnimation( "Idle" );
+     
+    layer->addChild( n );
 
+    CCSpriteFrameCache::sharedSpriteFrameCache()->addSpriteFramesWithFile( "monster.plist" );
+    SpriterNode *n = SpriterNode::create( "Example.SCML", "monster.png" );
+     
+    n->setPosition( ccp(600, 100) );
+    n->runAnimation( "Posture" );
+     
+    layer->addChild( n );
+        */
+        ///////////////////////////////////////////////////////////////
+        /*
+        CCSpriterX *animator = CCSpriterX::create("Example.SCML");
+
+		CC_BREAK_IF(! animator);
+
+		animator->setPosition(ccp(240, 30));
+		animator->setScale(0.8f);
+		layer->addChild(animator, 0, 100);
+        */
+        ///////////////////////////////////////////////////////////////
+        /*
+        	SPX_Sprite* sprite = SPX_Manager::CreateSprite(L"boy.sprite");
+	
+	sprite->SetAction("walk");//Set action ID
+	sprite->SetPosition(50, 30);
+    sprite->setScale(0.5f);
+    sprite->autorelease();
+
+		layer->addChild(sprite, 10);
+            */
         layer->autorelease();
 
         return layer;
@@ -80,7 +118,7 @@ void BoardLayer::draw()
 
     CHECK_GL_ERROR_DEBUG();
 
-    glEnable(GL_LINE_SMOOTH);
+    //glEnable(GL_LINE_SMOOTH);
 
     //attacker board
     ccDrawColor4B(255,0,255,64);
