@@ -4,36 +4,114 @@
 #include "Spriter\SpriterNode.h"
 #include "Spriter\CCSpriterX.h"
 
+//BoardLayer///////////////////////////////////////////////////////////////////////////////////////////////
 BoardLayer::BoardLayer()
 {
     size = CCSize(BASE_SIZE * BOARD_WIDTH, BASE_SIZE * BOARD_HEIGHT);
-    CCSize winSize = CCDirector::sharedDirector()->getWinSize();
-    atkBoardOrigin =  CCPoint((winSize.width - size.width) / 2, winSize.height / 2 - size.height - BASE_SIZE / 2);
-    dfnBoardOrigin =  CCPoint((winSize.width - size.width) / 2, winSize.height / 2 + size.height + BASE_SIZE / 2);
+}
 
+BoardLayer::~BoardLayer()
+{
+}
+
+void BoardLayer::draw()
+{
+    CCLayer::draw();
+
+    CHECK_GL_ERROR_DEBUG();
+
+    //glEnable(GL_LINE_SMOOTH);
+
+    ccDrawColor4B(255,0,255,64);
+    for (int j = 0; j <= BOARD_HEIGHT; j++) 
+    {
+        ccDrawLine(ccp(origin.x, origin.y + j * BASE_SIZE), 
+            ccp(origin.x + BOARD_WIDTH * BASE_SIZE, origin.y + j * BASE_SIZE));
+    }
+
+    for (int i = 0; i <= BOARD_WIDTH; i ++) 
+    {
+        ccDrawLine(ccp(origin.x + i * BASE_SIZE, origin.y), 
+            ccp(origin.x + i * BASE_SIZE, origin.y + BOARD_HEIGHT * BASE_SIZE));
+    }
+
+    //attacker board origin, index(0,0)
+    ccDrawColor4B(255,0,0,128);
+    ccDrawCircle(origin, 10, 360, 360, false, 1, 1);
+}
+
+void BoardLayer::update()
+{
+}
+
+CCRect BoardLayer::boundingBox()
+{
+    return CCRectMake(origin.x, origin.y, size.width, size.height);
+}
+
+void BoardLayer::rearrange()
+{
+    //need to reorder child for render.
+    for (int i = 0; i < BOARD_WIDTH; i++) 
+    {
+        int y = 0;
+        for (int j = BOARD_HEIGHT - 1; j >= 0; j--) 
+        {
+            if (board[i][j])
+            {
+                y = moveToTop(i, j);
+                board[i][y]->setPosition(getPositionByIndex(i, y));
+            }
+        }
+    }
+}
+
+int BoardLayer::moveToTop(int x, int y)
+{
+    int finalY = y;
+
+    Soldier** soldier = (Soldier**)board + BOARD_HEIGHT * x + y;
+
+    if (y + 1 < BOARD_HEIGHT && *(soldier + 1) == NULL)
+    {
+        *(soldier + 1) = *soldier;
+        
+        (*soldier) = NULL;
+        finalY = moveToTop(x, y + 1);
+    }
+
+    return finalY;
+}
+
+float BoardLayer::getPositionXByIndex(int x)
+{
+    return origin.x + x * BASE_SIZE;
+}
+
+CCPoint BoardLayer::getPositionByIndex(int x, int y)
+{
+    return CCPointMake(getPositionXByIndex(x), getPositionYByIndex(y));
+}
+
+//AttackerBoard///////////////////////////////////////////////////////////////////////////////////////////////
+AttackerBoard::AttackerBoard()
+{
+    origin =  CCPoint((WIN_SIZE.width - size.width) / 2, (WIN_SIZE.height - BASE_SIZE) / 2 - size.height);
+    
+    //for test
     for (int i = 0; i < BOARD_WIDTH; i++) 
     {
         for (int j = 0; j < BOARD_HEIGHT; j++) 
         {
-            atkBoard[i][j] = NULL;
-            dfnBoard[i][j] = NULL;
+            board[i][j] = NULL;
 
             if (rand() % 100 < 30)
             {
-                atkBoard[i][j] = Soldier::create();
-                atkBoard[i][j]->setPosition(atkPosition(i, j));
+                board[i][j] = Soldier::create();
+                board[i][j]->setPosition(getPositionByIndex(i, j));
 
-                //GLOBAL->Attackers->addObject(atkBoard[i][j]);
-                this->addChild(atkBoard[i][j], BOARD_HEIGHT * 2 - j);
-            }
-
-            if (rand() % 100 < 30)
-            {
-                dfnBoard[i][j] = Soldier::create();
-                dfnBoard[i][j]->setPosition(dfnPosition(i, j));
-
-                //GLOBAL->Defenders->addObject(dfnBoard[i][j]);
-                this->addChild(dfnBoard[i][j], j);
+                GLOBAL->Attackers->addObject(board[i][j]);
+                this->addChild(board[i][j], BOARD_HEIGHT * 2 - j);
             }
         }
     }
@@ -41,19 +119,19 @@ BoardLayer::BoardLayer()
     rearrange();
 }
 
-BoardLayer::~BoardLayer()
+AttackerBoard::~AttackerBoard()
 {
-    //GLOBAL->Attackers->removeAllObjects();
-    //GLOBAL->Defenders->removeAllObjects();
+    GLOBAL->Attackers->removeAllObjects();
 }
 
-BoardLayer* BoardLayer::create()
+
+AttackerBoard* AttackerBoard::create()
 {
-	BoardLayer* layer = NULL;
+	AttackerBoard* layer = NULL;
 
 	do 
 	{
-		layer = new BoardLayer();
+		layer = new AttackerBoard();
 		CC_BREAK_IF(!layer);
         /*
         CCObject* attacker = NULL;
@@ -114,179 +192,145 @@ BoardLayer* BoardLayer::create()
 	return NULL;
 }
 
-void BoardLayer::draw()
+void AttackerBoard::draw()
 {
-    CCLayer::draw();
-
-    CHECK_GL_ERROR_DEBUG();
-
-    //glEnable(GL_LINE_SMOOTH);
-
-    //attacker board
-    ccDrawColor4B(255,0,255,64);
-    for (int j = 0; j <= BOARD_WIDTH; j++) 
-    {
-        ccDrawLine(ccp(atkBoardOrigin.x, atkBoardOrigin.y + j * BASE_SIZE), 
-            ccp(atkBoardOrigin.x + BOARD_WIDTH * BASE_SIZE, atkBoardOrigin.y + j * BASE_SIZE));
-    }
-
-    for (int i = 0; i <= BOARD_WIDTH; i ++) 
-    {
-        ccDrawLine(ccp(atkBoardOrigin.x + i * BASE_SIZE, atkBoardOrigin.y), 
-            ccp(atkBoardOrigin.x + i * BASE_SIZE, atkBoardOrigin.y + BOARD_HEIGHT * BASE_SIZE));
-    }
-
-    //attacker board origin, index(0,0)
-    ccDrawColor4B(255,0,0,128);
-    ccDrawCircle(atkBoardOrigin, 10, 360, 360, false, 1, 1);
-
-    //defender board
-    ccDrawColor4B(255,0,255,64);
-    for (int j = 0; j <= BOARD_WIDTH; j++) 
-    {
-        ccDrawLine(ccp(dfnBoardOrigin.x, dfnBoardOrigin.y - j * BASE_SIZE), 
-            ccp(dfnBoardOrigin.x + BOARD_WIDTH * BASE_SIZE, dfnBoardOrigin.y - j * BASE_SIZE));
-    }
-
-    for (int i = 0; i <= BOARD_WIDTH; i ++) 
-    {
-        ccDrawLine(ccp(dfnBoardOrigin.x + i * BASE_SIZE, dfnBoardOrigin.y), 
-            ccp(dfnBoardOrigin.x + i * BASE_SIZE, dfnBoardOrigin.y - BOARD_HEIGHT * BASE_SIZE));
-    }
-
-    //defender board origin, index(0,0)
-    ccDrawColor4B(255,0,0,128);
-    ccDrawCircle(dfnBoardOrigin, 10, 360, 360, false, 1, 1);
+    BoardLayer::draw();
 }
 
-void BoardLayer::update()
-{
-}
-
-void BoardLayer::onEnter()
+void AttackerBoard::onEnter()
 {
     CCDirector* pDirector = CCDirector::sharedDirector();
     pDirector->getTouchDispatcher()->addTargetedDelegate(this, 0, true);
     CCNode::onEnter();
 }
 
-void BoardLayer::onExit()
+void AttackerBoard::onExit()
 {
     CCDirector* pDirector = CCDirector::sharedDirector();
     pDirector->getTouchDispatcher()->removeDelegate(this);
     CCNode::onExit();
 }
 
-bool BoardLayer::ccTouchBegan(CCTouch* touch, CCEvent* event)
+bool AttackerBoard::ccTouchBegan(CCTouch* touch, CCEvent* event)
 {
     CCPoint touchPoint = touch->getLocation();
 
-    if (!atkBoardRect().containsPoint(touchPoint))
+    if (!boundingBox().containsPoint(touchPoint))
         return false;
 
-    lastTouchedX = (touchPoint.x - atkBoardOrigin.x) / BASE_SIZE;
-    lastTouchedY = (touchPoint.y - atkBoardOrigin.y) / BASE_SIZE;
+    lastTouchedX = (touchPoint.x - origin.x) / BASE_SIZE;
+    lastTouchedY = (touchPoint.y - origin.y) / BASE_SIZE;
 
-    if (!atkBoard[lastTouchedX][lastTouchedY])
+    if (!board[lastTouchedX][lastTouchedY])
         return false;
 
     CCLog("move index x:%d, y:%d\n", lastTouchedX, lastTouchedY);
 
-    atkBoard[lastTouchedX][lastTouchedY]->selected();
-    this->reorderChild(atkBoard[lastTouchedX][lastTouchedY], BOARD_HEIGHT * 2);
+    board[lastTouchedX][lastTouchedY]->selected();
+    this->reorderChild(board[lastTouchedX][lastTouchedY], BOARD_HEIGHT * 2);
 
     return true;
 }
 
-void BoardLayer::ccTouchMoved(CCTouch* touch, CCEvent* event)
+void AttackerBoard::ccTouchMoved(CCTouch* touch, CCEvent* event)
 {
     CCPoint touchPoint = touch->getLocation();
 
-    if (!atkBoardRect().containsPoint(touchPoint))
+    if (!boundingBox().containsPoint(touchPoint))
         return;
 
-    touchedSoldier = atkBoard[lastTouchedX][lastTouchedY];
+    touchedSoldier = board[lastTouchedX][lastTouchedY];
     if (!touchedSoldier)
         return;
     
-    int x = (touchPoint.x - atkBoardOrigin.x) / BASE_SIZE;
-    int y = (touchPoint.y - atkBoardOrigin.y) / BASE_SIZE;
+    int x = (touchPoint.x - origin.x) / BASE_SIZE;
+    int y = (touchPoint.y - origin.y) / BASE_SIZE;
     x = x == BOARD_WIDTH ? x - 1 : x;
     y = y == BOARD_HEIGHT ? y - 1 : y;
 
     //already have a soldier in this place
-    if ((x == lastTouchedX && y == lastTouchedY) || atkBoard[x][y])
+    if ((x == lastTouchedX && y == lastTouchedY) || board[x][y])
     {
         return;
     }
 
-    atkBoard[x][y] = touchedSoldier;
-    atkBoard[lastTouchedX][lastTouchedY] = NULL;
+    board[x][y] = touchedSoldier;
+    board[lastTouchedX][lastTouchedY] = NULL;
     lastTouchedX = x;
     lastTouchedY = y;
 
-    touchedSoldier->setPosition(atkPosition(x, y));
+    touchedSoldier->setPosition(getPositionByIndex(x, y));
 }
 
-void BoardLayer::ccTouchEnded(CCTouch* touch, CCEvent* event)
+void AttackerBoard::ccTouchEnded(CCTouch* touch, CCEvent* event)
 {
-    this->reorderChild(atkBoard[lastTouchedX][lastTouchedY], BOARD_HEIGHT * 2 - lastTouchedY);
-    atkBoard[lastTouchedX][lastTouchedY]->stand();
+    this->reorderChild(board[lastTouchedX][lastTouchedY], BOARD_HEIGHT * 2 - lastTouchedY);
+    board[lastTouchedX][lastTouchedY]->stand();
 
     rearrange();
 }
 
-CCRect BoardLayer::atkBoardRect()
+float AttackerBoard::getPositionYByIndex(int y)
 {
-    return CCRectMake(atkBoardOrigin.x, atkBoardOrigin.y, size.width, size.height);
+    return origin.y + y * BASE_SIZE;
 }
 
-void BoardLayer::rearrange()
+
+//DefenderBoard///////////////////////////////////////////////////////////////////////////////////////////////
+DefenderBoard::DefenderBoard()
 {
-    //need to reorder child for render.
+    origin =  CCPoint((WIN_SIZE.width - size.width) / 2, (WIN_SIZE.height + BASE_SIZE) / 2);
+
+    //for test
     for (int i = 0; i < BOARD_WIDTH; i++) 
     {
-        int y = 0;
-        for (int j = BOARD_HEIGHT - 1; j >= 0; j--) 
+        for (int j = 0; j < BOARD_HEIGHT; j++) 
         {
-            if (atkBoard[i][j])
+            board[i][j] = NULL;
+
+            if (rand() % 100 < 30)
             {
-                y = moveToTop((Soldier***)atkBoard, i, j);
-                atkBoard[i][y]->setPosition(atkPosition(i, y));
-            }
-            
-            if (dfnBoard[i][j])
-            {
-                y = moveToTop((Soldier***)dfnBoard, i, j);
-                dfnBoard[i][y]->setPosition(dfnPosition(i, y));
+                board[i][j] = Soldier::create();
+                board[i][j]->setPosition(getPositionByIndex(i, j));
+
+                GLOBAL->Defenders->addObject(board[i][j]);
+                this->addChild(board[i][j], j);
             }
         }
     }
+
+    rearrange();
 }
 
-int BoardLayer::moveToTop(Soldier*** board, int x, int y)
+DefenderBoard::~DefenderBoard()
 {
-    int finalY = y;
-
-    Soldier** soldier = (Soldier**)board + BOARD_HEIGHT * x + y;
-
-    if (y + 1 < BOARD_HEIGHT && *(soldier + 1) == NULL)
-    {
-        *(soldier + 1) = *soldier;
-        
-        (*soldier) = NULL;
-        finalY = moveToTop(board, x, y + 1);
-    }
-
-    return finalY;
+    GLOBAL->Defenders->removeAllObjects();
 }
 
-CCPoint BoardLayer::atkPosition(int x, int y)
+DefenderBoard* DefenderBoard::create()
 {
-    return CCPointMake(atkBoardOrigin.x + x * BASE_SIZE, atkBoardOrigin.y + y * BASE_SIZE);
+	DefenderBoard* layer = NULL;
+
+	do 
+	{
+		layer = new DefenderBoard();
+		CC_BREAK_IF(!layer);
+
+        layer->autorelease();
+
+        return layer;
+
+	} while(0);
+
+	return NULL;
 }
 
-CCPoint BoardLayer::dfnPosition(int x, int y)
+void DefenderBoard::draw()
 {
-    return CCPointMake(dfnBoardOrigin.x + x * BASE_SIZE, dfnBoardOrigin.y - (y + 1) * BASE_SIZE);
+    BoardLayer::draw();
+}
+
+float DefenderBoard::getPositionYByIndex(int y)
+{
+    return origin.y + (BOARD_HEIGHT - y - 1) * BASE_SIZE;
 }

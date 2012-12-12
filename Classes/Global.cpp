@@ -4,13 +4,20 @@ DELCARE_SINGLETON_MEMBER(Global);
 
 Global::Global()
 {
-    this->Attackers = CCArray::create();
-    this->Defenders = CCArray::create();
+    Attackers = CCArray::create();
+    Defenders = CCArray::create();
 
     BattleBG = NULL;
+
+    Attackers->retain();
+    Defenders->retain();
+
+    WinSize = CCDirector::sharedDirector()->getWinSize();
 }
 
 
 Global::~Global()
 {
+    Attackers->release();
+    Defenders->release();
 }

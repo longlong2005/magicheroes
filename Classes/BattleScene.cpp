@@ -29,7 +29,11 @@ BattleScene* BattleScene::create()
 		scene = new BattleScene();
 		CC_BREAK_IF(!scene);
 
-        layer = BoardLayer::create();
+        layer = AttackerBoard::create();
+        CC_BREAK_IF(!layer);
+        scene->addChild(layer, 2);
+
+        layer = DefenderBoard::create();
         CC_BREAK_IF(!layer);
         scene->addChild(layer, 1);
 

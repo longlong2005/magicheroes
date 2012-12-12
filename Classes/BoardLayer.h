@@ -10,7 +10,46 @@ class Soldier;
 class BoardLayer : public CCLayer
 {
 public:
-    static BoardLayer* create();
+    void draw();
+    void update();
+
+    bool containsTouchLocation(CCTouch* touch);
+
+protected:
+    static const int BOARD_WIDTH = 8;
+    static const int BOARD_HEIGHT = 6;
+    static const int BASE_SIZE = 56;
+
+    Soldier* board[BOARD_WIDTH][BOARD_HEIGHT];
+    Soldier* touchedSoldier;
+
+    CCPoint origin;
+    CCSize size;
+
+    int lastTouchedX;
+    int lastTouchedY;
+
+    void rearrange();
+    
+    int moveToTop(int x, int y);
+
+    CCRect boundingBox();
+
+protected:
+    virtual CCPoint getPositionByIndex(int x, int y);
+
+    virtual float getPositionXByIndex(int x);
+    virtual float getPositionYByIndex(int y) = 0;
+
+protected:
+	BoardLayer();
+	~BoardLayer();
+};
+
+class AttackerBoard : public BoardLayer
+{
+public:
+    static AttackerBoard* create();
 
     void draw();
     void update();
@@ -24,36 +63,27 @@ public:
     bool containsTouchLocation(CCTouch* touch);
 
 protected:
-    static const int BOARD_WIDTH = 8;
-    static const int BOARD_HEIGHT = 6;
-    static const int BASE_SIZE = 56;
-
-    Soldier* atkBoard[BOARD_WIDTH][BOARD_HEIGHT];
-    Soldier* dfnBoard[BOARD_WIDTH][BOARD_HEIGHT];
-
-    Soldier* touchedSoldier;
-
-    CCPoint atkBoardOrigin;
-    CCPoint dfnBoardOrigin;
-
-    CCSize size;
-
-    int lastTouchedX;
-    int lastTouchedY;
-
-    void rearrange();
-    
-    int moveToTop(Soldier*** board, int x, int y);
-
-    CCRect atkBoardRect();
-
-private:
-    CCPoint atkPosition(int x, int y);
-    CCPoint dfnPosition(int x, int y);
+    virtual float getPositionYByIndex(int y);
 
 protected:
-	BoardLayer();
-	~BoardLayer();
+	AttackerBoard();
+	~AttackerBoard();
+};
+
+class DefenderBoard : public BoardLayer
+{
+public:
+    static DefenderBoard* create();
+
+    void draw();
+    void update();
+
+protected:
+    virtual float getPositionYByIndex(int y);
+
+protected:
+	DefenderBoard();
+	~DefenderBoard();
 };
 
 #endif  // __BOARD_LAYER_H__

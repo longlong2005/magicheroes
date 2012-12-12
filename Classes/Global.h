@@ -12,6 +12,8 @@ class BackGroundLayer;
 class Global : public Singleton<Global>
 {
 public:
+    CCSize WinSize;
+
     CCArray* Attackers;
     CCArray* Defenders;
 
@@ -21,6 +23,10 @@ public:
 };
 
 #define GLOBAL Global::instance()
+
+#define WIN_SIZE GLOBAL->WinSize
+#define ATTACKERS GLOBAL->Attackers
+#define DEFENDERS GLOBAL->Defenders
 
 #endif  // __GLOBAL_H__
 
