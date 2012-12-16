@@ -1,5 +1,5 @@
 #include "BattleScene.h"
-#include "BoardLayer.h"
+#include "BattleField.h"
 #include "BackGroundLayer.h"
 #include "BattleController.h"
 #include "Global.h"
@@ -20,7 +20,7 @@ bool BattleScene::init()
 BattleScene* BattleScene::create()
 {
 	BattleScene* scene = NULL;
-    BoardLayer* layer = NULL;
+    BattleField* layer = NULL;
     BackGroundLayer* bg = NULL;
     BattleController* controller = NULL;
 
@@ -29,11 +29,11 @@ BattleScene* BattleScene::create()
 		scene = new BattleScene();
 		CC_BREAK_IF(!scene);
 
-        layer = AttackerBoard::create();
+        layer = AttackerField::create();
         CC_BREAK_IF(!layer);
         scene->addChild(layer, 2);
 
-        layer = DefenderBoard::create();
+        layer = DefenderField::create();
         CC_BREAK_IF(!layer);
         scene->addChild(layer, 1);
 

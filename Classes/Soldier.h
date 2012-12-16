@@ -3,16 +3,30 @@
 
 #include "cocos2d.h"
 #include "AnimationManager.h"
+#include "BattleUnit.h"
 
 USING_NS_CC;
 
 typedef enum _SoldierState 
 {
     StateStand = 0,
-    StateSelected
+    StateWall,
+    StateCharge,
+    StateAttack,
+    StateUnderAttack,
+    StateSelected,
+    StateLeaveField,
+    StateReturnField,
 } SoldierState; 
 
-class Soldier : public CCNode, public CCTargetedTouchDelegate
+typedef enum _SoldierColor 
+{
+    ColorRed = 0,
+    ColorYellow,
+    ColorGreen
+} SoldierColor; 
+
+class Soldier : public BattleUnit
 {
 public:
     static Soldier* create();
@@ -29,13 +43,17 @@ public:
     virtual void selected();
     virtual void stand();
 
-protected:
-    virtual bool init();
+    void setColor(SoldierColor color);
+    SoldierColor getColor();
 
+protected:
     Soldier();
     virtual ~Soldier();
 
-    int state;
+    virtual bool init();
+
+    SoldierState state;
+    SoldierColor color;
 
     CCSprite* sprite;
 };

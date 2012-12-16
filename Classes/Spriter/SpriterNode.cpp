@@ -11,30 +11,34 @@
 
 USING_NS_CC;
 
-//#pragma mark SpriterConfigNode
 SpriterConfigNode::SpriterConfigNode()
 {
-    this->_children = new CCArray();
-    this->_properties = new CCDictionary();
-    this->_parent = NULL;
+    _children = new CCArray();
+    _properties = new CCDictionary();
+    _parent = NULL;
 }
 
 SpriterConfigNode::~SpriterConfigNode()
-{
-    if (this->_children) {
-        this->_children->autorelease();
+{  
+    if (_children) {
+        _children->removeAllObjects();
+        _children->release();
+        _children = NULL;
     }
-    if (this->_properties) {
-        this->_properties->autorelease();
+    if (_properties) {
+        _properties->removeAllObjects();
+        _properties->release();
+        _properties = NULL;
     }
 }
 
 SpriterConfigNode* SpriterConfigNode::create(const char *name)
 {
     SpriterConfigNode *node = new SpriterConfigNode();
-    
-    node->_name = name;
-    
+
+    CCString* str = CCString::create( name );
+    node->_name = (char*)(str->m_sString.c_str());
+
     return node;
 }
 
@@ -90,10 +94,12 @@ CCString* SpriterConfigNode::getPropertyCCString(const char *key)
     return CCString::create("");
 }
 
-//#pragma mark SpriterObjectRef
 SpriterObjectRef* SpriterObjectRef::create()
 {
-    return new SpriterObjectRef();
+    SpriterObjectRef* objectRef = new SpriterObjectRef();
+    objectRef->autorelease();
+
+    return objectRef;
 }
 
 int SpriterObjectRef::getTimelineId()
@@ -115,15 +121,25 @@ void SpriterObjectRef::setTimelineKey(int timelineKey)
 {
     _timelineKey = timelineKey;
 }
-//#pragma mark TGSpriterMainlineKey
 
 SpriterMainlineKey* SpriterMainlineKey::create()
 {
     SpriterMainlineKey *key = new SpriterMainlineKey();
-    
+    key->autorelease();
+
     key->_objectRefs = new CCArray();
     
     return key;
+}
+
+SpriterMainlineKey::~SpriterMainlineKey()
+{
+    if (_objectRefs)
+    {
+        _objectRefs->removeAllObjects();
+        _objectRefs->release();
+        _objectRefs = NULL;
+    }
 }
 
 void SpriterMainlineKey::addObjectRef(SpriterObjectRef *objectRef)
@@ -139,8 +155,20 @@ CCArray* SpriterMainlineKey::getObjectRefs()
 SpriterTimeline* SpriterTimeline::create()
 {
     SpriterTimeline *line = new SpriterTimeline();
+    line->autorelease();
+
     line->_keys = new CCArray();
     return line;
+}
+
+SpriterTimeline::~SpriterTimeline()
+{
+    if (_keys)
+    {
+        _keys->removeAllObjects();
+        _keys->release();
+        _keys = NULL;
+    }
 }
 
 void SpriterTimeline::addKeyFrame(SpriterTimelineKey *frame)
@@ -156,7 +184,8 @@ CCArray* SpriterTimeline::getKeys()
 SpriterTimelineKey* SpriterTimelineKey::create()
 {
     SpriterTimelineKey *key = new SpriterTimelineKey();
-    
+    key->autorelease();
+
     return key;
 }
 
@@ -254,7 +283,10 @@ SpriterAnimation::~SpriterAnimation()
 
 SpriterAnimation* SpriterAnimation::create()
 {
-    return new SpriterAnimation();
+    SpriterAnimation* animation = new SpriterAnimation();
+    animation->autorelease();
+
+    return animation;
 }
 
 const char* SpriterAnimation::getName()
@@ -314,17 +346,20 @@ SpriterNode::~SpriterNode()
 {
     if (_files)
     {
+        _files->removeAllObjects();
         _files->release();
         _files = NULL;
     }
     
     if (_animations)
     {
+        _animations->removeAllObjects();
         _animations->release();
         _animations = NULL;
     }
     if (_frames)
     {
+        _frames->removeAllObjects();
         _frames->release();
         _frames = NULL;
     }
@@ -334,6 +369,8 @@ SpriterNode::~SpriterNode()
         _spriteNodes->release();
         _spriteNodes = NULL;
     }
+
+    CC_SAFE_DELETE(_configRoot);
 }
 
 SpriterNode * SpriterNode::create(const char *scmlFile)
@@ -357,7 +394,7 @@ SpriterNode* SpriterNode::create(const char *scmlFile, const char *imageFile)
     pNode->_useBatchNode = true;
     pNode->_batchNode = CCSpriteBatchNode::create(imageFile);
     pNode->addChild(pNode->_batchNode);
-    
+
     if (pNode->initNodeWithFile(scmlFile))
     {
         pNode->autorelease();
@@ -395,10 +432,11 @@ bool SpriterNode::initNodeWithFile(const char *scmlFile)
 
 void SpriterNode::initObjects()
 {
+    //CCLog("Config Root Children Count:%d", _configRoot->getChildrenCount());
     for (int i=0; i<_configRoot->getChildrenCount(); i++)
     {
         SpriterConfigNode *c = _configRoot->getChildrenAt(i);
-        CCLog("%s", c->getName());
+        //CCLog("%s", c->getName());
         
         if (!strncmp(c->getName(), "folder", strlen(c->getName())))
         {
@@ -524,12 +562,12 @@ void SpriterNode::initObjects()
             }
         }
     }
-    
+    /*
     if ( _configRoot )
     {
         _configRoot->release();
         _configRoot = NULL;
-    }
+    }*/
 }    
 
 void SpriterNode::startElement(void *ctx, const char *name, const char **atts)
@@ -542,7 +580,7 @@ void SpriterNode::startElement(void *ctx, const char *name, const char **atts)
         _curConfigNode = _configRoot;
         return;
     }
-    
+
     SpriterConfigNode *newNode = SpriterConfigNode::create( name );
     
     newNode->setParent( _curConfigNode );
@@ -552,13 +590,14 @@ void SpriterNode::startElement(void *ctx, const char *name, const char **atts)
         {
             std::string key = (char*)atts[i];
             std::string value = (char*)atts[i+1];
-            
+//CCLog("key:%s, value:%s", (char*)atts[i], (char*)atts[i+1]);
             newNode->getProperties()->setObject( CCString::create( value ), key );
         }
     }
-    
+  
     _curConfigNode->getChildren()->addObject( newNode );
     _curConfigNode = newNode;
+    newNode->release();
 }
 
 void SpriterNode::endElement(void *ctx, const char *name)
@@ -587,7 +626,7 @@ void SpriterNode::runAnimation(const char *animation)
 
 void SpriterNode::update(float dt)
 {
-    CCLog("%f", dt);//Cocos2d: 0.016306
+    //CCLog("%f", dt);//Cocos2d: 0.016306
     
     _duration += dt;
     

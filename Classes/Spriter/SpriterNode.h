@@ -62,6 +62,9 @@ private:
 class SpriterMainlineKey : public CCObject
 {
 public:
+    SpriterMainlineKey() {};
+    ~SpriterMainlineKey();
+
     CCArray* getObjectRefs();
     void setObjectRefs(CCArray* objectRefs);
     
@@ -124,6 +127,9 @@ private:
 class SpriterTimeline : public CCObject
 {
 public:
+    SpriterTimeline() {};
+    ~SpriterTimeline();
+
     static SpriterTimeline* create();
     
     CCArray* getKeys();

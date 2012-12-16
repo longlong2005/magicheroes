@@ -13,6 +13,7 @@ public:
 
     //for test
     void testBattle(CCObject* sender);
+    void testAnimation(CCObject* sender);
     void testHttp(CCObject* sender);
     void onQuit(CCObject* sender);
 

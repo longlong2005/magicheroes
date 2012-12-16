@@ -1,4 +1,5 @@
 #include "Soldier.h"
+#include "BattleField.h"
 
 Soldier::Soldier()
 {
@@ -77,7 +78,7 @@ void Soldier::draw()
 
         CCPoint origin = getPosition();
         //ccDrawSolidRect(CCPointMake(0, -960), CCPointMake(0 + 56, 960), ccc4f(255,0,0,8));
-        ccDrawRect(CCPointMake(0, -960), CCPointMake(0 + 56, 960));
+        ccDrawRect(CCPointMake(0, -960), CCPointMake(0 + BattleField::BASE_TILE_WIDTH, 960));
         }break;
 
     default:
@@ -106,6 +107,16 @@ void Soldier::ccTouchMoved(CCTouch* touch, CCEvent* event)
 
 void Soldier::ccTouchEnded(CCTouch* touch, CCEvent* event)
 {
+}
+
+void Soldier::setColor(SoldierColor color)
+{
+    this->color = color;
+}
+
+SoldierColor Soldier::getColor()
+{
+    return color;
 }
 
 void Soldier::selected()
