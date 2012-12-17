@@ -55,6 +55,8 @@ protected:
     SoldierState state;
     SoldierColor color;
 
+    int population;
+
     CCSprite* sprite;
 };
 

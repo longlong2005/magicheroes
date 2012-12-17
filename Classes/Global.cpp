@@ -3,14 +3,11 @@
 DELCARE_SINGLETON_MEMBER(Global);
 
 Global::Global()
+    :Attackers(NULL)
+    ,Defenders(NULL)
 {
-    Attackers = CCArray::create();
-    Defenders = CCArray::create();
-
+    //for test
     BattleBG = NULL;
-
-    Attackers->retain();
-    Defenders->retain();
 
     WinSize = CCDirector::sharedDirector()->getWinSize();
 }
@@ -18,6 +15,4 @@ Global::Global()
 
 Global::~Global()
 {
-    Attackers->release();
-    Defenders->release();
 }

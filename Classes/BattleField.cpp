@@ -8,14 +8,15 @@ BattleField::BattleField()
     :touchedSoldier(NULL)
     ,lastTouchedX(0)
     ,lastTouchedY(0)
-    ,reinforcement(CCArray::create())
+    ,allSoldiers(CCArray::create())
+    ,reinforcements(CCArray::create())
 {
+    memset(field, 0, FIELD_WIDTH * FIELD_HEIGHT * sizeof(Soldier*));
     size = CCSize(BASE_TILE_WIDTH * FIELD_WIDTH, BASE_TILE_HEIGHT * FIELD_HEIGHT);
 }
 
 BattleField::~BattleField()
 {
-    //reinforcement->release();
 }
 
 void BattleField::draw()
@@ -169,7 +170,7 @@ bool BattleField::removeSoldierByIndex(int x, int y)
     if (getSoldierByIndex(x, y))
     {
         field[x][y] = NULL;
-        //return to reinforcement?
+        //return to reinforcements?
         return true;
     }
 
@@ -186,38 +187,64 @@ CCPoint BattleField::getPositionByIndex(int x, int y)
     return CCPointMake(getPositionXByIndex(x), getPositionYByIndex(y));
 }
 
+void BattleField::createReinforcements()
+{
+    int unitCount = 30;
+
+    for (int i = 0; i < unitCount; i++)
+    {
+        //set color, set type, get them from hero
+        Soldier* soldier = Soldier::create();
+        allSoldiers->addObject(soldier);
+        reinforcements->addObject(soldier);
+    }
+}
+
+void BattleField::sendSoldiersToField()
+{
+    int x = 0;
+    int y = 0;
+
+    CCObject* soldier = NULL;
+    CCARRAY_FOREACH(reinforcements, soldier)
+    {
+        if (soldier == NULL) break;
+
+        if (getEnableTileIndex(x, y))
+        {
+            field[x][y] = (Soldier*)soldier;
+            field[x][y]->setPosition(getPositionByIndex(x, y));
+            addChild(field[x][y], y);
+        }
+
+        if (++x >= FIELD_WIDTH) x = 0;
+    }
+}
+
+bool BattleField::getEnableTileIndex(int &x, int &y)
+{
+    for (int i = FIELD_HEIGHT - 1; i >= 0; i--)
+    {
+        if (field[x][i] != NULL) continue;
+
+        y = i;
+        //soldier size?
+        return true;
+    }
+
+    return false;
+}
+
 //AttackerField///////////////////////////////////////////////////////////////////////////////////////////////
 AttackerField::AttackerField()
 {
+    GLOBAL->Attackers = allSoldiers;
+
     origin =  CCPoint((WIN_SIZE.width - size.width) / 2, (WIN_SIZE.height - BASE_TILE_HEIGHT) / 2 - size.height);
-
-    //for test
-    for (int i = 0; i < FIELD_WIDTH; i++) 
-    {
-        for (int j = 0; j < FIELD_HEIGHT; j++) 
-        {
-            field[i][j] = NULL;
-
-            if (rand() % 100 < 30)
-            {
-                field[i][j] = Soldier::create();
-                field[i][j]->setPosition(getPositionByIndex(i, j));
-
-                GLOBAL->Attackers->addObject(field[i][j]);
-                this->addChild(field[i][j], FIELD_HEIGHT * 2 - j);
-            }
-        }
-    }
-
-    rearrange();
 }
 
 AttackerField::~AttackerField()
 {
-    if (GLOBAL->Attackers)
-    {
-        GLOBAL->Attackers->removeAllObjects();
-    }
 }
 
 
@@ -229,6 +256,9 @@ AttackerField* AttackerField::create()
     {
         layer = new AttackerField();
         CC_BREAK_IF(!layer);
+
+        layer->createReinforcements();
+        layer->sendSoldiersToField();
 
         layer->autorelease();
 
@@ -324,9 +354,15 @@ void AttackerField::ccTouchEnded(CCTouch* touch, CCEvent* event)
     }
     else
     {
-        removeSoldier(touchedSoldier);
-        appendSoldier(currTouchedX, touchedSoldier);
-        
+        if (currTouchedX != lastTouchedX)
+        {
+            removeSoldier(touchedSoldier);
+            if (!appendSoldier(currTouchedX, touchedSoldier))
+            {
+                appendSoldier(lastTouchedX, touchedSoldier);
+            }
+        }
+
         touchedSoldier->stand();
         touchedSoldier = NULL;
     }
@@ -345,33 +381,11 @@ DefenderField::DefenderField()
 {
     origin =  CCPoint((WIN_SIZE.width - size.width) / 2, (WIN_SIZE.height + BASE_TILE_HEIGHT) / 2);
 
-    //for test
-    for (int i = 0; i < FIELD_WIDTH; i++) 
-    {
-        for (int j = 0; j < FIELD_HEIGHT; j++) 
-        {
-            field[i][j] = NULL;
-
-            if (rand() % 100 < 30)
-            {
-                field[i][j] = Soldier::create();
-                field[i][j]->setPosition(getPositionByIndex(i, j));
-
-                GLOBAL->Defenders->addObject(field[i][j]);
-                this->addChild(field[i][j], j);
-            }
-        }
-    }
-
-    rearrange();
+    GLOBAL->Defenders = allSoldiers;
 }
 
 DefenderField::~DefenderField()
 {
-    if (GLOBAL->Defenders)
-    {
-        GLOBAL->Defenders->removeAllObjects();
-    }
 }
 
 DefenderField* DefenderField::create()
@@ -382,6 +396,9 @@ DefenderField* DefenderField::create()
     {
         layer = new DefenderField();
         CC_BREAK_IF(!layer);
+
+        layer->createReinforcements();
+        layer->sendSoldiersToField();
 
         layer->autorelease();
 

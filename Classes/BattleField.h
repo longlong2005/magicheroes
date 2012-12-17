@@ -22,6 +22,9 @@ public:
     bool removeSoldier(Soldier* soldier);
     bool removeSoldierByIndex(int x, int y);
 
+    void createReinforcements();
+    void sendSoldiersToField();
+
     bool containsTouchLocation(CCTouch* touch);
 
     static const int FIELD_WIDTH = 8;
@@ -39,11 +42,16 @@ protected:
     
     int moveToTop(int x, int y);
 
+    bool getEnableTileIndex(int &x, int &y); //for test function
+
     CCRect boundingBox();
     
     Soldier* field[FIELD_WIDTH][FIELD_HEIGHT];
     Soldier* touchedSoldier;
-    CCArray* reinforcement;
+
+    CCArray* allSoldiers;
+    CCArray* reinforcements;
+
     CCPoint origin;
     CCSize size;
 
