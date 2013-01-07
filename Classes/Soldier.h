@@ -1,11 +1,8 @@
 #ifndef __SOLDIER_H__
 #define __SOLDIER_H__
 
-#include "cocos2d.h"
-#include "AnimationManager.h"
+#include "GameBasic.h"
 #include "BattleUnit.h"
-
-USING_NS_CC;
 
 typedef enum _SoldierState 
 {
@@ -39,12 +36,24 @@ public:
     virtual void ccTouchMoved(CCTouch* touch, CCEvent* event);
     virtual void ccTouchEnded(CCTouch* touch, CCEvent* event);
     
+    virtual void moveTo(CCPoint position, float duration=0.5f);
+    
+    void completeMove();
+
+    bool isAlone();
+    bool isSelected();
+
     //for testing state changed
     virtual void selected();
     virtual void stand();
+    virtual void wall();
+    virtual void charge();
 
     void setColor(SoldierColor color);
     SoldierColor getColor();
+
+    void setGridIndex(GridIndex index);
+    GridIndex getGridIndex();
 
 protected:
     Soldier();
@@ -54,6 +63,10 @@ protected:
 
     SoldierState state;
     SoldierColor color;
+    ccColor4F rColor;
+    GridIndex index;
+
+    CCSize size;
 
     int population;
 

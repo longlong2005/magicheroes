@@ -7,6 +7,7 @@ BattleController::BattleController()
 {
     sprite1 = NULL;
     sprite2 = NULL;
+    sprite3 = NULL;
 }
 
 
@@ -42,7 +43,7 @@ bool BattleController::init()
     sprite1 = CCSprite::createWithTexture(texture);
     sprite1->setAnchorPoint(CCPointMake(0, 0));
     sprite1->setScale(2.0f);
-    sprite1->setPosition(CCPointMake(384, 20));
+    sprite1->setPosition(CCPointMake(184, 20));
 
     addChild(sprite1);
 
@@ -53,6 +54,16 @@ bool BattleController::init()
     sprite2->setPosition(CCPointMake(584, 20));
 
     addChild(sprite2);
+
+    texture = CCTextureCache::sharedTextureCache()->addImage("CloseSelected.png");
+    sprite3 = CCSprite::createWithTexture(texture);
+    sprite3->setAnchorPoint(CCPointMake(0, 0));
+    sprite3->setScale(2.0f);
+    sprite3->setColor(ccc3(0, 128, 0));
+    sprite3->setPosition(CCPointMake(384, 20));
+
+    addChild(sprite3);
+
     return true;
 }
 

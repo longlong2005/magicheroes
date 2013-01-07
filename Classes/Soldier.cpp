@@ -2,9 +2,26 @@
 #include "BattleField.h"
 
 Soldier::Soldier()
+    :sprite(NULL)
+    ,state(StateStand)
+    ,rColor(ccc4f(0,0,0,16))
+    ,size(CCSize(1,1))
 {
-    sprite = NULL;
-    state = StateStand;
+    SoldierColor allColors[] = {ColorRed, ColorYellow, ColorGreen};
+    color = allColors[rand() % 3];
+    if (color == ColorRed || color == ColorYellow)
+    {
+        rColor.r = 255;
+    }
+    
+    if (color == ColorYellow || color == ColorGreen)
+    {
+        rColor.g = 255;
+    }
+
+    setContentSize(CCSize(FIELD_GRID_WIDTH, FIELD_GRID_HEIGHT));
+
+    //CCLog("Soldier color, r:%f", rColor.r);
 }
 
 Soldier::~Soldier()
@@ -34,7 +51,7 @@ Soldier* Soldier::create()
 bool Soldier::init()
 {
     CCAnimation* animation = ANIMATION_MGR->getAnimation();
-    CCTexture2D* texture = CCTextureCache::sharedTextureCache()->addImage("s1.png");
+    CCTexture2D* texture = CCTextureCache::sharedTextureCache()->addImage("s2.png");
     CCSpriteFrame* frame = CCSpriteFrame::createWithTexture(texture, CCRectMake(120 * 0, 0, 120, 120));
 
     sprite = CCSprite::createWithSpriteFrame(frame);
@@ -55,15 +72,10 @@ void Soldier::draw()
 
     CHECK_GL_ERROR_DEBUG();
     //glEnable(GL_LINE_SMOOTH);
-/*
-    CCRect rect = sprite->boundingBox();
-    ccDrawColor4B(255,255,255,255);
-    ccDrawRect(rect.origin, CCPointMake(rect.origin.x + rect.size.width, rect.origin.y + rect.size.height));
 
-    rect = this->boundingBox();
-    ccDrawColor4B(255,0,0,255);
-    ccDrawRect(rect.origin, CCPointMake(rect.origin.x + rect.size.width, rect.origin.y + rect.size.height));
-*/
+    CCSize size = getContentSize();
+    ccDrawSolidRect(CCPointMake(size.width / 6, size.height / 6), CCPointMake(size.width * 5 / 6, size.height * 5 / 6), rColor);
+
     //need to move these code to change state function
     //at here, just for testing 
     switch (state)
@@ -74,11 +86,7 @@ void Soldier::draw()
 
     case StateSelected:
         {
-
-
-        CCPoint origin = getPosition();
-        //ccDrawSolidRect(CCPointMake(0, -960), CCPointMake(0 + 56, 960), ccc4f(255,0,0,8));
-        ccDrawRect(CCPointMake(0, -960), CCPointMake(0 + BattleField::BASE_TILE_WIDTH, 960));
+            ccDrawRect(CCPointMake(0, -960), CCPointMake(size.width, 960));
         }break;
 
     default:
@@ -109,6 +117,26 @@ void Soldier::ccTouchEnded(CCTouch* touch, CCEvent* event)
 {
 }
 
+void Soldier::moveTo(CCPoint position, float duration)
+{
+    CCArray* actions = CCArray::create();
+    actions->addObject(CCMoveTo::create(duration, position));
+    actions->addObject(CCCallFunc::create(this, callfunc_selector(Soldier::completeMove)));
+    runAction(CCSequence::create(actions));
+
+    actions->release();
+}
+
+bool Soldier::isAlone()
+{
+    return (state != StateCharge) && (state != StateWall);
+}
+
+bool Soldier::isSelected()
+{
+    return state == StateSelected;
+}
+
 void Soldier::setColor(SoldierColor color)
 {
     this->color = color;
@@ -117,6 +145,16 @@ void Soldier::setColor(SoldierColor color)
 SoldierColor Soldier::getColor()
 {
     return color;
+}
+
+void Soldier::setGridIndex(GridIndex index)
+{
+    this->index = index;
+}
+
+GridIndex Soldier::getGridIndex()
+{
+    return index;
 }
 
 void Soldier::selected()
@@ -133,4 +171,23 @@ void Soldier::stand()
     sprite->setAnchorPoint(CCPointMake(0.2f, 0.15f));
     
     state = StateStand;
+}
+
+void Soldier::wall()
+{
+    sprite->setVisible(false);
+
+    state = StateWall;
+}
+
+void Soldier::charge()
+{
+    sprite->setVisible(false);
+
+    state = StateCharge;
+}
+
+void Soldier::completeMove()
+{
+    NOTIFY->postNotification(MSG_ATK_SOLDIER_COMPLETE_MOVE, this);
 }

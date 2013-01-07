@@ -1,22 +1,31 @@
 #include "BattleField.h"
-#include "Global.h"
 #include "Soldier.h"
 #include "Spriter/SpriterNode.h"
 
 //BattleField///////////////////////////////////////////////////////////////////////////////////////////////
 BattleField::BattleField()
     :touchedSoldier(NULL)
-    ,lastTouchedX(0)
-    ,lastTouchedY(0)
+    ,lastIndex(GridIndexOrigin)
     ,allSoldiers(CCArray::create())
     ,reinforcements(CCArray::create())
+    ,movedSoldiers(CCArray::create())
+    ,needToRearrange(CCArray::create())
 {
-    memset(field, 0, FIELD_WIDTH * FIELD_HEIGHT * sizeof(Soldier*));
-    size = CCSize(BASE_TILE_WIDTH * FIELD_WIDTH, BASE_TILE_HEIGHT * FIELD_HEIGHT);
+    memset(field, 0, FIELD_COLUMN_MAX * FIELD_ROW_MAX * sizeof(Soldier*));
+    size = CCSize(FIELD_GRID_WIDTH * FIELD_COLUMN_MAX, FIELD_GRID_HEIGHT * FIELD_ROW_MAX);
+
+    allSoldiers->retain();
+    reinforcements->retain();
+    movedSoldiers->retain();
+    needToRearrange->retain();
 }
 
 BattleField::~BattleField()
 {
+    allSoldiers->release();
+    reinforcements->release();
+    movedSoldiers->release();
+    needToRearrange->release();
 }
 
 void BattleField::draw()
@@ -25,23 +34,21 @@ void BattleField::draw()
 
     CHECK_GL_ERROR_DEBUG();
 
-    //glEnable(GL_LINE_SMOOTH);
-
     ccDrawColor4B(255,0,255,64);
-    for (int j = 0; j <= FIELD_HEIGHT; j++) 
+    for (int j = 0; j <= FIELD_ROW_MAX; j++) 
     {
-        ccDrawLine(ccp(origin.x, origin.y + j * BASE_TILE_HEIGHT), 
-            ccp(origin.x + FIELD_WIDTH * BASE_TILE_WIDTH, origin.y + j * BASE_TILE_HEIGHT));
+        ccDrawLine(ccp(origin.x, origin.y + j * FIELD_GRID_HEIGHT), 
+            ccp(origin.x + FIELD_COLUMN_MAX * FIELD_GRID_WIDTH, origin.y + j * FIELD_GRID_HEIGHT));
     }
 
     ccDrawColor4B(255,0,255,64);
-    for (int i = 0; i <= FIELD_WIDTH; i ++) 
+    for (int i = 0; i <= FIELD_COLUMN_MAX; i ++) 
     {
-        ccDrawLine(ccp(origin.x + i * BASE_TILE_WIDTH, origin.y), 
-            ccp(origin.x + i * BASE_TILE_WIDTH, origin.y + FIELD_HEIGHT * BASE_TILE_HEIGHT));
+        ccDrawLine(ccp(origin.x + i * FIELD_GRID_WIDTH, origin.y), 
+            ccp(origin.x + i * FIELD_GRID_WIDTH, origin.y + FIELD_ROW_MAX * FIELD_GRID_HEIGHT));
     }
 
-    //attacker field origin, index(0,0)
+    //field position origin
     ccDrawColor4B(255,0,0,128);
     ccDrawCircle(origin, 10, 360, 360, false, 1, 1);
 }
@@ -55,92 +62,55 @@ CCRect BattleField::boundingBox()
     return CCRectMake(origin.x, origin.y, size.width, size.height);
 }
 
-void BattleField::rearrange()
-{
-    //need to reorder child for render.
-    for (int i = 0; i < FIELD_WIDTH; i++) 
+bool BattleField::changeIntoAttackFormation(int column, int row)
+{  
+    int startRow = row - 2;
+    int sameCount = 0;
+
+    Soldier* lastSoldier = NULL;
+    CCArray* attackFormation = CCArray::create();
+    
+    for (int i = 0; i < 5; i++)
     {
-        int y = 0;
-        for (int j = FIELD_HEIGHT - 1; j >= 0; j--) 
+        int nextRow = startRow + i;
+        if (nextRow >= FIELD_ROW_MAX || nextRow < 0) 
+            continue;
+
+        Soldier* currSoldier = getSoldierByIndex(GridIndexMake(column, nextRow));
+        if (currSoldier == NULL || !currSoldier->isAlone()) 
         {
-            if (field[i][j])
+            sameCount = 0;
+            attackFormation->removeAllObjects();
+
+            continue;
+        }
+
+        if (lastSoldier)
+        {
+            if (lastSoldier->getColor() != currSoldier->getColor())
             {
-                y = moveToTop(i, j);
-                field[i][y]->setPosition(getPositionByIndex(i, y));
+                sameCount = 0;
+                attackFormation->removeAllObjects();
             }
         }
-    }
-}
 
-int BattleField::moveToTop(int x, int y)
-{
-    int finalY = y;
+        lastSoldier = currSoldier;
+        attackFormation->addObject(currSoldier);
 
-    Soldier** soldier = (Soldier**)field + FIELD_HEIGHT * x + y;
-
-    if (y + 1 < FIELD_HEIGHT && *(soldier + 1) == NULL)
-    {
-        *(soldier + 1) = *soldier;
-
-        (*soldier) = NULL;
-        finalY = moveToTop(x, y + 1);
-    }
-
-    return finalY;
-}
-
-Soldier* BattleField::getLastSoldier(int x)
-{
-    CCAssert(x >= 0 && x < FIELD_WIDTH, sprintf("Invalid column index:%d", x));
-
-    for (int i = 0; i < FIELD_HEIGHT; i++)
-    {
-        if (field[x][i]) return field[x][i];
-    }
-
-    return NULL;
-}
-
-Soldier* BattleField::getHeadSoldier(int x)
-{
-    CCAssert(x >= 0 && x < FIELD_WIDTH, sprintf("Invalid column index:%d", x));
-
-    for (int i = FIELD_HEIGHT; i >= 0; i--)
-    {
-        if (field[x][i]) return field[x][i];
-    }
-
-    return NULL;
-}
-
-Soldier* BattleField::getSoldierByIndex(int x, int y)
-{
-    CCAssert(x >= 0 && x < FIELD_WIDTH, sprintf("Invalid column index:%d", x));
-    CCAssert(y >= 0 && y < FIELD_HEIGHT, sprintf("Invalid row index:%d", y));
-
-    return field[x][y];
-}
-
-Soldier* BattleField::getSoldierByPosition(CCPoint position)
-{
-    int x = position.x / BASE_TILE_WIDTH;
-    int y = position.y / BASE_TILE_HEIGHT;
-
-    if (x >= 0 && x < FIELD_WIDTH && y >= 0 && y < FIELD_HEIGHT)
-        return field[x][y];
-
-    return NULL;
-}
-    
-bool BattleField::appendSoldier(int x, Soldier* soldier)
-{
-    CCAssert(x >= 0 && x < FIELD_WIDTH, sprintf("Invalid column index:%d", x));
-
-    for (int i = FIELD_HEIGHT - 1; i >= 0; i--)
-    {
-        if (field[x][i] == NULL)
+        if (++sameCount >= 3)
         {
-            field[x][i] = soldier;
+            //move to top after walls
+            removeSoldiers(attackFormation);
+            for (int j = 0; j < 3; j++)
+            {
+                currSoldier = (Soldier*)attackFormation->objectAtIndex(j);
+                currSoldier->charge();
+
+                NOTIFY->postNotification(MSG_ATK_SOLDIER_MOVE, currSoldier);
+
+                insertSoldier(column, j, currSoldier);
+            }
+            
             return true;
         }
     }
@@ -148,43 +118,254 @@ bool BattleField::appendSoldier(int x, Soldier* soldier)
     return false;
 }
 
-bool BattleField::removeSoldier(Soldier* soldier)
+bool BattleField::changeIntoDefendWall(int column, int row)
 {
-    for (int i = 0; i < FIELD_WIDTH; i++)
+    int startColumn = column - 2;
+    int sameCount = 0;
+
+    Soldier* lastSoldier = NULL;
+    CCArray* walls = CCArray::create();
+
+    for (int i = 0; i < 5; i++)
     {
-        for (int j = 0; j < FIELD_HEIGHT; j++)
+        int nextColumn = startColumn + i;
+        if (nextColumn >= FIELD_COLUMN_MAX || nextColumn < 0) 
+            continue;
+
+        Soldier* currSoldier = getSoldierByIndex(GridIndexMake(nextColumn, row));
+        if (currSoldier == NULL || !currSoldier->isAlone())
         {
-            if (field[i][j] == soldier)
+            sameCount = 0;
+            walls->removeAllObjects();
+
+            continue;
+        }
+
+        if (lastSoldier)
+        {
+            if (lastSoldier->getColor() != currSoldier->getColor())
             {
-                field[i][j] = NULL;
-                return true;
+                sameCount = 0;
+                walls->removeAllObjects();
             }
+        }
+
+        lastSoldier = currSoldier;
+        walls->addObject(currSoldier);
+        
+        if (++sameCount >= 3)
+        {
+            //move to top after walls
+            removeSoldiers(walls);
+            for (int j = 0; j < 3; j++)
+            {
+                currSoldier = (Soldier*)walls->objectAtIndex(j);
+                currSoldier->wall();
+
+                NOTIFY->postNotification(MSG_ATK_SOLDIER_MOVE, currSoldier);
+
+                insertSoldier(currSoldier->getGridIndex().column, 0, currSoldier);
+            }
+
+            return true;
         }
     }
 
     return false;
 }
 
-bool BattleField::removeSoldierByIndex(int x, int y)
+Soldier** BattleField::soldiersInColumn(int column)
 {
-    if (getSoldierByIndex(x, y))
+    CCAssert(column >= 0 && column < FIELD_COLUMN_MAX, sprintf("Invalid column index:%d", column));
+
+    return field[column];
+}
+
+Soldier** BattleField::soldiersInRow(int row)
+{
+    CCAssert(row >= 0 && row < FIELD_ROW_MAX, sprintf("Invalid row index:%d", row));
+
+    memset(rowSoldiers, 0, FIELD_COLUMN_MAX * sizeof(Soldier*));
+    for (int i = 0; i < FIELD_COLUMN_MAX; i++)
     {
-        field[x][y] = NULL;
-        //return to reinforcements?
-        return true;
+        rowSoldiers[i] = field[i][row];
+    }
+
+    return rowSoldiers;
+}
+
+Soldier* BattleField::lastSoldierInColumn(int column)
+{
+    Soldier** soldiers = soldiersInColumn(column);
+    for (int i = FIELD_ROW_MAX - 1; i >= 0; i--)
+    {
+        if (soldiers[i]) 
+            return soldiers[i];
+    }
+
+    return NULL;
+}
+
+Soldier* BattleField::firstSoldierInColumn(int column)
+{
+    return soldiersInColumn(column)[0];
+}
+
+Soldier* BattleField::getSoldierByIndex(const GridIndex& index)
+{
+    CCAssert(index.row >= 0 && index.row < FIELD_ROW_MAX, sprintf("Invalid row index:%d", index.row));
+
+    return soldiersInColumn(index.column)[index.row];
+}
+
+Soldier* BattleField::getSoldierByPosition(CCPoint position)
+{
+    int column = position.x / FIELD_GRID_WIDTH;
+    int row = position.y / FIELD_GRID_HEIGHT;
+
+    return getSoldierByIndex(GridIndexMake(column, row));
+}
+    
+bool BattleField::appendSoldier(int column, Soldier* soldier)
+{
+    Soldier** soldiers = soldiersInColumn(column);
+
+    for (int i = 0; i < FIELD_ROW_MAX; i++)
+    {
+        if (soldiers[i] == NULL)
+        {
+            soldiers[i] = soldier;
+            soldier->setGridIndex(GridIndexMake(column, i));
+            //soldier->setPosition(getPositionByIndex(GridIndexMake(column, i)));
+            return true;
+        }
     }
 
     return false;
 }
 
-float BattleField::getPositionXByIndex(int x)
+void BattleField::insertSoldier(int column, int row, Soldier* soldier)
 {
-    return origin.x + x * BASE_TILE_WIDTH;
+    CCAssert(row >= 0 && row < FIELD_ROW_MAX, sprintf("Invalid row index:%d", row));
+
+    Soldier** soldiers = soldiersInColumn(column);
+    int moveCount = FIELD_ROW_MAX - row -1;
+
+    if (moveCount <= 0)
+        return;
+    
+    int lastRow = FIELD_ROW_MAX - 1;
+    CCPoint position;
+    for (int i = 0; i < moveCount; i++)
+    {
+        soldiers[FIELD_ROW_MAX - i - 1] = soldiers[FIELD_ROW_MAX - i - 2];
+        if (soldiers[FIELD_ROW_MAX - i - 1])
+        {
+            position = getPositionByIndex(GridIndexMake(column, FIELD_ROW_MAX - i - 1));
+            soldiers[FIELD_ROW_MAX - i - 1]->setGridIndex(GridIndexMake(column, FIELD_ROW_MAX - i - 1));
+            soldiers[FIELD_ROW_MAX - i - 1]->moveTo(position);
+
+            if (movedSoldiers->containsObject(soldiers[FIELD_ROW_MAX - i - 1]))
+            {
+                int index = movedSoldiers->indexOfObject(soldiers[FIELD_ROW_MAX - i - 1]);
+                movedSoldiers->replaceObjectAtIndex(index, soldiers[FIELD_ROW_MAX - i - 1]);
+            }
+            else
+            {
+                movedSoldiers->addObject(soldiers[FIELD_ROW_MAX - i - 1]);
+            } 
+            
+            if (needToRearrange->containsObject(soldiers[FIELD_ROW_MAX - i - 1]))
+            {
+                int index = needToRearrange->indexOfObject(soldiers[FIELD_ROW_MAX - i - 1]);
+                needToRearrange->replaceObjectAtIndex(index, soldiers[FIELD_ROW_MAX - i - 1]);
+            }
+            else
+            {
+                needToRearrange->addObject(soldiers[FIELD_ROW_MAX - i - 1]);
+            } 
+        }
+    }
+
+    position = getPositionByIndex(GridIndexMake(column, row));
+    soldier->setGridIndex(GridIndexMake(column, row));
+    soldier->moveTo(position);
+    movedSoldiers->addObject(soldier);
+    soldiers[row] = soldier;
 }
 
-CCPoint BattleField::getPositionByIndex(int x, int y)
+void BattleField::removeSoldier(Soldier* soldier)
 {
-    return CCPointMake(getPositionXByIndex(x), getPositionYByIndex(y));
+    for (int i = 0; i < FIELD_COLUMN_MAX; i++)
+    {
+        for (int j = 0; j < FIELD_ROW_MAX; j++)
+        {
+            if (field[i][j] == soldier)
+            {
+                field[i][j] = NULL;
+                reformSoldierInColumn(i);
+            }
+        }
+    }
+}
+
+void BattleField::removeSoldiers(CCArray* soldiers)
+{
+    CCObject* soldier = NULL;
+    CCARRAY_FOREACH(soldiers, soldier)
+    {
+        CC_BREAK_IF(!soldier);
+
+        removeSoldier((Soldier*)soldier);
+    }
+}
+
+void BattleField::reformSoldierInColumn(int column)
+{
+    Soldier** soldiers = soldiersInColumn(column);
+    for (int i = 0; i < FIELD_ROW_MAX - 1; i++)
+    {
+        if (soldiers[i] == NULL)
+        {
+            soldiers[i] = soldiers[i + 1];
+            soldiers[i + 1] = NULL;
+
+            if (soldiers[i])
+            {
+                soldiers[i]->setGridIndex(GridIndexMake(column, i));
+                needToRearrange->addObject(soldiers[i]);
+            }
+        }
+    }
+}
+
+void BattleField::removeSoldierByIndex(const GridIndex& index)
+{
+    Soldier* soldier = getSoldierByIndex(index);
+    if (soldier)
+    {
+        removeSoldier(soldier);
+    }
+}
+
+float BattleField::getPositionXByColumn(int column)
+{
+    return origin.x + column * FIELD_GRID_WIDTH;
+}
+
+GridIndex BattleField::getIndexByPosition(CCPoint point)
+{
+    return GridIndexMake(getColumnByPosition(point.x), getRowByPosition(point.y));
+}
+
+CCPoint BattleField::getPositionByIndex(const GridIndex& index)
+{
+    return CCPointMake(getPositionXByColumn(index.column), getPositionYByRow(index.row));
+}
+
+int BattleField::getColumnByPosition(float x)
+{
+    return (x - origin.x) / FIELD_GRID_WIDTH;
 }
 
 void BattleField::createReinforcements()
@@ -195,6 +376,7 @@ void BattleField::createReinforcements()
     {
         //set color, set type, get them from hero
         Soldier* soldier = Soldier::create();
+
         allSoldiers->addObject(soldier);
         reinforcements->addObject(soldier);
     }
@@ -202,32 +384,37 @@ void BattleField::createReinforcements()
 
 void BattleField::sendSoldiersToField()
 {
-    int x = 0;
-    int y = 0;
+    int column = 0;
+    int row = 0;
 
     CCObject* soldier = NULL;
     CCARRAY_FOREACH(reinforcements, soldier)
     {
-        if (soldier == NULL) break;
+        if (soldier == NULL) 
+            break;
 
-        if (getEnableTileIndex(x, y))
+        if (getEnableGridIndex(column, row))
         {
-            field[x][y] = (Soldier*)soldier;
-            field[x][y]->setPosition(getPositionByIndex(x, y));
-            addChild(field[x][y], y);
+            field[column][row] = (Soldier*)soldier;
+            field[column][row]->setPosition(getPositionByIndex(GridIndexMake(column, row)));
+            field[column][row]->setGridIndex(GridIndexMake(column, row));
+            addChild(field[column][row], -getPositionYByRow(row));
+            reinforcements->fastRemoveObject(soldier);
         }
 
-        if (++x >= FIELD_WIDTH) x = 0;
+        if (++column >= FIELD_COLUMN_MAX) 
+            column = 0;
     }
 }
 
-bool BattleField::getEnableTileIndex(int &x, int &y)
+bool BattleField::getEnableGridIndex(int &column, int &row)
 {
-    for (int i = FIELD_HEIGHT - 1; i >= 0; i--)
+    for (int i = 0; i < FIELD_ROW_MAX; i++)
     {
-        if (field[x][i] != NULL) continue;
+        if (field[column][i] != NULL) 
+            continue;
 
-        y = i;
+        row = i;
         //soldier size?
         return true;
     }
@@ -240,11 +427,14 @@ AttackerField::AttackerField()
 {
     GLOBAL->Attackers = allSoldiers;
 
-    origin =  CCPoint((WIN_SIZE.width - size.width) / 2, (WIN_SIZE.height - BASE_TILE_HEIGHT) / 2 - size.height);
+    origin =  CCPoint((WIN_SIZE.width - size.width) / 2, (WIN_SIZE.height - FIELD_GRID_HEIGHT) / 2 - size.height);
+
+    init();
 }
 
 AttackerField::~AttackerField()
 {
+    NOTIFY->removeObserver(this, MSG_ATK_SOLDIER_COMPLETE_MOVE);
 }
 
 
@@ -267,6 +457,14 @@ AttackerField* AttackerField::create()
     } while(0);
 
     return NULL;
+}
+
+bool AttackerField::init()
+{
+    //register msg
+    NOTIFY->addObserver(this, callfuncO_selector(AttackerField::onAtkSoldierCompleteMove) , MSG_ATK_SOLDIER_COMPLETE_MOVE, NULL);
+
+    return true;
 }
 
 void AttackerField::draw()
@@ -295,6 +493,21 @@ bool AttackerField::ccTouchBegan(CCTouch* touch, CCEvent* event)
     if (!boundingBox().containsPoint(touchPoint))
         return false;
 
+    GridIndex currIndex = getIndexByPosition(touchPoint);
+    Soldier* soldier = NULL;
+
+    if (!touchedSoldier)
+    {
+        Soldier* soldier = lastSoldierInColumn(currIndex.column);
+        if (!soldier || !soldier->isAlone())
+            return false;
+
+        soldier->selected();
+        reorderChild(soldier, FIELD_ROW_MAX * 2);
+        touchedSoldier = soldier;
+        lastIndex = currIndex;
+    }
+
     return true;
 }
 
@@ -304,82 +517,130 @@ void AttackerField::ccTouchMoved(CCTouch* touch, CCEvent* event)
 
     if (!boundingBox().containsPoint(touchPoint))
         return;
-    /*
-    touchedSoldier = field[lastTouchedX][lastTouchedY];
-    if (!touchedSoldier)
-    return;
 
-    int x = (touchPoint.x - origin.x) / BASE_TILE_WIDTH;
-    int y = (touchPoint.y - origin.y) / BASE_TILE_HEIGHT;
-    x = x == FIELD_WIDTH ? x - 1 : x;
-    y = y == FIELD_HEIGHT ? y - 1 : y;
+    //if (touchedSoldier && touchedSoldier->isSelected())
+    //{
+    //    GridIndex currIndex = getIndexByPosition(touchPoint);
 
-    //already have a soldier in this place
-    if ((x == lastTouchedX && y == lastTouchedY) || field[x][y])
-    {
-    return;
-    }
+    //    if (abs(lastIndex.column - currIndex.column) >= 1)
+    //    {
+    //        //set game state 
+    //        if (movedSoldiers->count() > 0)
+    //            movedSoldiers->removeAllObjects();
 
-    field[x][y] = touchedSoldier;
-    field[lastTouchedX][lastTouchedY] = NULL;
-    lastTouchedX = x;
-    lastTouchedY = y;
+    //        if (needToRearrange->count() > 0)
+    //            needToRearrange->removeAllObjects();
 
-    touchedSoldier->setPosition(getPositionByIndex(x, y));
-    */
+    //        removeSoldier(touchedSoldier);
+    //        this->removeChild(touchedSoldier, false);
+
+    //        touchedSoldier = NULL;
+    //    }
+    //    else
+    //    {
+    //        Soldier* soldier = getSoldierByIndex(currIndex);
+    //        if (!soldier || !soldier->isAlone())
+    //            return;
+
+    //        soldier->selected();
+    //        reorderChild(soldier, FIELD_ROW_MAX * 2);
+    //        touchedSoldier->stand();
+    //        touchedSoldier = soldier;
+    //        lastIndex = currIndex;
+    //    }
+    //}
 }
 
 void AttackerField::ccTouchEnded(CCTouch* touch, CCEvent* event)
 {
-    //this->reorderChild(field[lastTouchedX][lastTouchedY], FIELD_HEIGHT * 2 - lastTouchedY);
-    //field[lastTouchedX][lastTouchedY]->stand();
-
     CCPoint touchPoint = touch->getLocation();
-    int currTouchedX = (touchPoint.x - origin.x) / BASE_TILE_WIDTH;
-    int currTouchedY = (touchPoint.y - origin.y) / BASE_TILE_HEIGHT;
+    if (!boundingBox().containsPoint(touchPoint))
+        return;
 
-    if (!touchedSoldier)
+    GridIndex currIndex = getIndexByPosition(touchPoint);
+    Soldier* soldier = NULL;
+
+    if (touchedSoldier)
     {
-        Soldier* soldier = getLastSoldier(currTouchedX);
-        if (!soldier)
-            return;
-
-        CCLog("move index x:%d, y:%d\n", lastTouchedX, lastTouchedY);
-
-        soldier->selected();
-        this->reorderChild(soldier, FIELD_HEIGHT * 2);
-        touchedSoldier = soldier;
-        lastTouchedX = currTouchedX;
-        lastTouchedY = currTouchedY;
-    }
-    else
-    {
-        if (currTouchedX != lastTouchedX)
+        if (touchedSoldier->isSelected())
         {
-            removeSoldier(touchedSoldier);
-            if (!appendSoldier(currTouchedX, touchedSoldier))
-            {
-                appendSoldier(lastTouchedX, touchedSoldier);
-            }
+            touchedSoldier->moveTo(CCPointMake(touchedSoldier->getPosition().x, -100), 0.2f);
+            touchedSoldier->stand();
+
+            return;
         }
 
-        touchedSoldier->stand();
+        removeSoldier(touchedSoldier);
+
+        if (appendSoldier(currIndex.column, touchedSoldier))
+        {
+            touchedSoldier->setPositionX(getPositionByIndex(currIndex).x);
+
+            //set game state 
+            if (movedSoldiers->count() > 0)
+                movedSoldiers->removeAllObjects();
+
+            if (needToRearrange->count() > 0)
+                needToRearrange->removeAllObjects();
+
+            movedSoldiers->addObject(touchedSoldier);
+            needToRearrange->addObject(touchedSoldier);
+        }
+        else
+        {
+            appendSoldier(lastIndex.column, touchedSoldier);
+        }
+
+        CCPoint position = getPositionByIndex(touchedSoldier->getGridIndex());
+        touchedSoldier->moveTo(position, 0.2f);
+
         touchedSoldier = NULL;
     }
-
-    rearrange();
 }
 
-float AttackerField::getPositionYByIndex(int y)
+float AttackerField::getPositionYByRow(int row)
 {
-    return origin.y + y * BASE_TILE_HEIGHT;
+    return origin.y + (FIELD_ROW_MAX - row - 1) * FIELD_GRID_HEIGHT;
 }
 
+int AttackerField::getRowByPosition(float y)
+{
+    return FIELD_ROW_MAX - (y - origin.y) / FIELD_GRID_HEIGHT - 1;
+}
+
+void AttackerField::onAtkSoldierCompleteMove(CCObject* obj)
+{
+    movedSoldiers->removeObject(obj);
+    if (movedSoldiers->count() == 0) //all moved soldiers have been in right position
+    {
+        if (needToRearrange->count() > 0)
+        {
+            CCLog("------------------------------------");
+
+            do
+            {
+                CCObject* soldier = needToRearrange->lastObject();
+                CC_BREAK_IF(!soldier);
+
+                GridIndex index = ((Soldier*)soldier)->getGridIndex();
+                CCLog("Grid index, soldier:%d, column:%d,row:%d", soldier, index.column, index.row);
+                needToRearrange->removeObject(soldier);
+                //check attack formation or walls
+                if (changeIntoAttackFormation(index.column, index.row) || changeIntoDefendWall(index.column, index.row))
+                {
+                    return;
+                }
+            } while (true);
+        }
+
+        NOTIFY->postNotification(MSG_ATK_SOLDIER_COMPLETE_REARRANGE, this);
+    }
+}
 
 //DefenderField///////////////////////////////////////////////////////////////////////////////////////////////
 DefenderField::DefenderField()
 {
-    origin =  CCPoint((WIN_SIZE.width - size.width) / 2, (WIN_SIZE.height + BASE_TILE_HEIGHT) / 2);
+    origin =  CCPoint((WIN_SIZE.width - size.width) / 2, (WIN_SIZE.height + FIELD_GRID_HEIGHT) / 2);
 
     GLOBAL->Defenders = allSoldiers;
 }
@@ -414,7 +675,13 @@ void DefenderField::draw()
     BattleField::draw();
 }
 
-float DefenderField::getPositionYByIndex(int y)
+float DefenderField::getPositionYByRow(int row)
 {
-    return origin.y + (FIELD_HEIGHT - y - 1) * BASE_TILE_HEIGHT;
+    return origin.y + row * FIELD_GRID_HEIGHT;
 }
+
+int DefenderField::getRowByPosition(float y)
+{
+    return (origin.y - y) / FIELD_GRID_HEIGHT;
+}
+

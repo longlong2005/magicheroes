@@ -12,8 +12,6 @@ class BackGroundLayer;
 class Global : public Singleton<Global>
 {
 public:
-    CCSize WinSize;
-
     CCArray* Attackers;
     CCArray* Defenders;
 
@@ -24,9 +22,18 @@ public:
 
 #define GLOBAL Global::instance()
 
-#define WIN_SIZE GLOBAL->WinSize
 #define ATTACKERS GLOBAL->Attackers
 #define DEFENDERS GLOBAL->Defenders
+
+#define WIN_SIZE CCDirector::sharedDirector()->getWinSize()
+#define NOTIFY CCNotificationCenter::sharedNotificationCenter()
+
+
+
+
+#define MSG_ATK_SOLDIER_MOVE "ATK_SOLDIER_MOVE"
+#define MSG_ATK_SOLDIER_COMPLETE_MOVE "ATK_SOLDIER_COMPLETE_MOVE"
+#define MSG_ATK_SOLDIER_COMPLETE_REARRANGE "ATK_SOLDIER_COMPLETE_REARRANGE"
 
 #endif  // __GLOBAL_H__
 

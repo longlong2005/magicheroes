@@ -1,9 +1,7 @@
 #ifndef __BATTLE_FIELD_H__
 #define __BATTLE_FIELD_H__
 
-#include "cocos2d.h"
-
-USING_NS_CC;
+#include "GameBasic.h"
 
 class Soldier;
 
@@ -13,50 +11,57 @@ public:
     void draw();
     void update();
 
-    Soldier* getLastSoldier(int x);
-    Soldier* getHeadSoldier(int x);
-    Soldier* getSoldierByIndex(int x, int y);
+    Soldier* lastSoldierInColumn(int column);
+    Soldier* firstSoldierInColumn(int column);
+    Soldier* getSoldierByIndex(const GridIndex& index);
     Soldier* getSoldierByPosition(CCPoint position);
 
-    bool appendSoldier(int x, Soldier* soldier);
-    bool removeSoldier(Soldier* soldier);
-    bool removeSoldierByIndex(int x, int y);
+    Soldier** soldiersInColumn(int column);
+    Soldier** soldiersInRow(int row);
+
+    bool appendSoldier(int column, Soldier* soldier);
+    void insertSoldier(int column, int row, Soldier* soldier);
+    void removeSoldier(Soldier* soldier);
+    void removeSoldiers(CCArray* soldiers);
+    void removeSoldierByIndex(const GridIndex& index);
+    void reformSoldierInColumn(int column);
 
     void createReinforcements();
     void sendSoldiersToField();
 
+    bool changeIntoAttackFormation(int column, int row);
+    bool changeIntoDefendWall(int column, int row);
+
     bool containsTouchLocation(CCTouch* touch);
 
-    static const int FIELD_WIDTH = 8;
-    static const int FIELD_HEIGHT = 6;
-    static const int BASE_TILE_WIDTH = 64;
-    static const int BASE_TILE_HEIGHT = 56;
-
 protected:
-    virtual CCPoint getPositionByIndex(int x, int y);
+    GridIndex getIndexByPosition(CCPoint point);
 
-    virtual float getPositionXByIndex(int x);
-    virtual float getPositionYByIndex(int y) = 0;
-    
-    void rearrange();
-    
-    int moveToTop(int x, int y);
+    virtual CCPoint getPositionByIndex(const GridIndex& index);
 
-    bool getEnableTileIndex(int &x, int &y); //for test function
+    virtual float getPositionXByColumn(int column);
+    virtual float getPositionYByRow(int row) = 0;
+    
+    virtual int getColumnByPosition(float x);
+    virtual int getRowByPosition(float y) = 0;
+
+    bool getEnableGridIndex(int &x, int &y); //for test function
 
     CCRect boundingBox();
     
-    Soldier* field[FIELD_WIDTH][FIELD_HEIGHT];
+    Soldier* field[FIELD_COLUMN_MAX][FIELD_ROW_MAX];
     Soldier* touchedSoldier;
+    Soldier* rowSoldiers[FIELD_COLUMN_MAX];
 
     CCArray* allSoldiers;
     CCArray* reinforcements;
+    CCArray* movedSoldiers;
+    CCArray* needToRearrange;
 
     CCPoint origin;
     CCSize size;
 
-    int lastTouchedX;
-    int lastTouchedY;
+    GridIndex lastIndex;
 
 protected:
 	BattleField();
@@ -80,7 +85,12 @@ public:
     bool containsTouchLocation(CCTouch* touch);
 
 protected:
-    virtual float getPositionYByIndex(int y);
+    virtual float getPositionYByRow(int row);
+    virtual int getRowByPosition(float y);
+
+    bool init();
+
+    void onAtkSoldierCompleteMove(CCObject* obj);
 
 protected:
 	AttackerField();
@@ -96,7 +106,8 @@ public:
     void update();
 
 protected:
-    virtual float getPositionYByIndex(int y);
+    virtual float getPositionYByRow(int row);
+    virtual int getRowByPosition(float y);
 
 protected:
 	DefenderField();

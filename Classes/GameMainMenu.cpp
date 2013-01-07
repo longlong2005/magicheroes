@@ -57,22 +57,24 @@ void GameMainMenu::testAnimation(CCObject* sender)
 {
     CCScene* scene = CCScene::create();
     
+    CCSpriteFrameCache::sharedSpriteFrameCache()->addSpriteFramesWithFile( "monster.plist" );
+    CCSpriteFrameCache::sharedSpriteFrameCache()->addSpriteFramesWithFile( "s1/s1.plist" );
+    SpriterNode *n1 = SpriterNode::create( "s1/a1.scml", "s1/s1.png" );
+    //SpriterNode *n2 = SpriterNode::create( "monster.scml", "monster.png" );
 
-    CCSpriteFrameCache::sharedSpriteFrameCache()->addSpriteFramesWithFile( "s1.plist" );
-    SpriterNode *n = SpriterNode::create( "a1_002.scml", "s1.png" );
-    SpriterNode *m = SpriterNode::create( "a1_002.scml", "s1.png" );
+    n1->setPosition( ccp(160, 100) );
+    n1->setScale(3);
+    n1->runAnimation( "daiji" );
 
-    n->setPosition( ccp(160, 100) );
-    n->setScale(0.6f);
+    //n2->setPosition( ccp(500, 100) );
+    //n2->setScale(0.8f);
+    //n2->runAnimation( "Idle" );
+    
+    scene->addChild( n1 );
+    //scene->addChild( n2);
 
-    m->setPosition( ccp(500, 100) );
-    m->setScale(0.8f);
-
-    m->runAnimation( "daiji" );
-//    n->runAnimation( "Idle" );
-
-    scene->addChild( n );
-    scene->addChild( m);
+            //n1->setIsFlipX(false);
+        //n2->setIsFlipX(false);
 
     CCDirector::sharedDirector()->replaceScene(CCTransitionFade::create(1.0f, scene));
 }

@@ -8,11 +8,11 @@ Global::Global()
 {
     //for test
     BattleBG = NULL;
-
-    WinSize = CCDirector::sharedDirector()->getWinSize();
 }
 
 
 Global::~Global()
 {
+    Attackers = NULL;
+    Defenders = NULL;
 }

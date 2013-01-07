@@ -313,7 +313,7 @@
             <key>size</key>
             <string>{512,1024}</string>
             <key>smartupdate</key>
-            <string>$TexturePacker:SmartUpdate:fa18c39dc79b10d0d6f15d9a26890298$</string>
+            <string>$TexturePacker:SmartUpdate:3222a6d373fddfbad669158c32a59551$</string>
             <key>textureFileName</key>
             <string>monster.png</string>
         </dict>

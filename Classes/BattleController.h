@@ -1,10 +1,7 @@
 #ifndef __BATTLE_CONTROLLER_H__
 #define __BATTLE_CONTROLLER_H__
 
-#include "cocos2d.h"
-#include "AnimationManager.h"
-
-USING_NS_CC;
+#include "GameBasic.h"
 
 class BattleController : public CCLayer
 {
@@ -22,6 +19,7 @@ protected:
 
     CCSprite* sprite1; //background test
     CCSprite* sprite2; //return game main menu
+    CCSprite* sprite3; //reinforcements
 
 protected:
     BattleController();
