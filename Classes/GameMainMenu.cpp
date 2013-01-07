@@ -1,6 +1,7 @@
 #include "GameMainMenu.h"
 #include "BattleScene.h"
-#include "Spriter\SpriterNode.h"
+#include "Spriter/SpriterNode.h"
+#include "Net/HttpUtils.h"
 
 GameMainMenu::GameMainMenu()
 {
@@ -57,9 +58,9 @@ void GameMainMenu::testAnimation(CCObject* sender)
     CCScene* scene = CCScene::create();
     
 
-    CCSpriteFrameCache::sharedSpriteFrameCache()->addSpriteFramesWithFile( "monster.plist" );
-    SpriterNode *n = SpriterNode::create( "Example.SCML", "monster.png" );
-    SpriterNode *m = SpriterNode::create( "Example.SCML", "monster.png" );
+    CCSpriteFrameCache::sharedSpriteFrameCache()->addSpriteFramesWithFile( "s1.plist" );
+    SpriterNode *n = SpriterNode::create( "a1_002.scml", "s1.png" );
+    SpriterNode *m = SpriterNode::create( "a1_002.scml", "s1.png" );
 
     n->setPosition( ccp(160, 100) );
     n->setScale(0.6f);
@@ -67,8 +68,8 @@ void GameMainMenu::testAnimation(CCObject* sender)
     m->setPosition( ccp(500, 100) );
     m->setScale(0.8f);
 
-    m->runAnimation( "Posture" );
-    n->runAnimation( "Idle" );
+    m->runAnimation( "daiji" );
+//    n->runAnimation( "Idle" );
 
     scene->addChild( n );
     scene->addChild( m);
@@ -78,6 +79,31 @@ void GameMainMenu::testAnimation(CCObject* sender)
 
 void GameMainMenu::testHttp(CCObject* sender)
 {
+    GetParam    gp;
+    gp.url = "http://www.cmqa3.kabam.asia/ajax/upgrade.php?type=string&version=01001&worldId=0&mobileid=17c3a84ac65a61483ed70aee0b0007f7&platformid=201&become_user_id=&become_password=&debug=1&gameSlot=2&gameNumber=2&download=1";
+    gp.ok = httpOk_selector(GameMainMenu::getOk);
+    gp.error = httpError_selector(GameMainMenu::getError);
+//    HTTP->get(&gp);
+    HTTP->download(&gp, "abctest");
+}
+
+void    GameMainMenu::getOk(CCDictionary*ok)
+{
+    printf("getOk");
+}
+void    GameMainMenu::postOk(CCDictionary*ok)
+{
+    printf("postOk");
+}
+
+void    GameMainMenu::getError(const char*)
+{
+    printf("geterror");
+}
+
+void    GameMainMenu::postError(const char*)
+{
+    printf("posterror");
 }
 
 void GameMainMenu::onQuit(CCObject* sender)

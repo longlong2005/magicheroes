@@ -1,7 +1,7 @@
 #include "BattleField.h"
 #include "Global.h"
 #include "Soldier.h"
-#include "Spriter\SpriterNode.h"
+#include "Spriter/SpriterNode.h"
 
 //BattleField///////////////////////////////////////////////////////////////////////////////////////////////
 BattleField::BattleField()

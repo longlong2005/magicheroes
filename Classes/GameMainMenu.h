@@ -16,6 +16,11 @@ public:
     void testAnimation(CCObject* sender);
     void testHttp(CCObject* sender);
     void onQuit(CCObject* sender);
+    
+    void    getOk(CCDictionary*ok);
+    void    postOk(CCDictionary*ok);
+    void    getError(const char*);
+    void    postError(const char*);
 
 protected:
     GameMainMenu();

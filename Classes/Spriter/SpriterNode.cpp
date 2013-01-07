@@ -672,6 +672,7 @@ void SpriterNode::update(float dt)
         SpriterTimelineKey *nextTimelineKey = (SpriterTimelineKey*)objectTimeline->getKeys()->objectAtIndex(nextObjectRef->getTimelineKey());
         
         const char *displayFrameName = ((CCString*)_files->objectForKey(CCString::createWithFormat("%d-%d", curTimelineKey->getFolderId(), curTimelineKey->getFileId())->getCString()))->getCString();
+        printf("%d->%s\n",i,displayFrameName);
         
         CCSprite *sprite;
         
@@ -701,9 +702,17 @@ void SpriterNode::update(float dt)
         
         sprite->setVisible(true);
         
+        sprite->setPosition(CCPointMake(curTimelineKey->getPostion().x,curTimelineKey->getPostion().y));
+        
+        if( i == 4 ){
+            sprite->setPosition(CCPointMake(
+                                            interpolate(curTimelineKey->getPostion().x, nextTimelineKey->getPostion().x, interpolationFactor),
+                                            29 + interpolate(curTimelineKey->getPostion().y, nextTimelineKey->getPostion().y, interpolationFactor)));
+        }else{
         sprite->setPosition(CCPointMake(
                 interpolate(curTimelineKey->getPostion().x, nextTimelineKey->getPostion().x, interpolationFactor),
                 interpolate(curTimelineKey->getPostion().y, nextTimelineKey->getPostion().y, interpolationFactor)));
+        }
         
         sprite->setAnchorPoint(CCPointMake(
                 interpolate(curTimelineKey->getAnchorPoint().x, nextTimelineKey->getAnchorPoint().x, interpolationFactor),
@@ -712,16 +721,24 @@ void SpriterNode::update(float dt)
         double nextRotation = nextTimelineKey->getRotation();
         double curRotation = curTimelineKey->getRotation();
         
-        if (curTimelineKey->getSpin() == 1 && (nextRotation - curRotation) < 0)
+//        if (curTimelineKey->getSpin() == 1 && (nextRotation - curRotation) < 0)
+//        {
+//            nextRotation += 360;
+//        }
+//        else if(curTimelineKey->getSpin() == -1 && (nextRotation - curRotation ) >0)
+//        {
+//            nextRotation -= 360;
+//        }
+//        
+//        sprite->setRotation( - interpolate(curRotation, nextRotation, interpolationFactor) );
+        if( i == 5 ){
+            sprite->setRotation( -90 );
+        }else
+        sprite->setRotation( curRotation );
+        if( i == 7 )
         {
-            nextRotation += 360;
+            sprite->setScaleX(-1);
         }
-        else if(curTimelineKey->getSpin() == -1 && (nextRotation - curRotation ) >0)
-        {
-            nextRotation -= 360;
-        }
-        
-        sprite->setRotation( - interpolate(curRotation, nextRotation, interpolationFactor) );
     }
 }
 

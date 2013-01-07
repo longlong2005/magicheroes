@@ -1,5 +1,5 @@
 #include "cocos2d.h"
-#include "vld.h"
+//#include "vld.h"
 #include "CCEGLView.h"
 #include "Global.h"
 #include "AnimationManager.h"
