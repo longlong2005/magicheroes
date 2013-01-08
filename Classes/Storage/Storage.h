@@ -11,9 +11,10 @@
 
 #include "cocos2d.h"
 #include "Singleton.h"
+
 USING_NS_CC;
 
-class Storage:public Singleton<Storage>
+class Storage : public Singleton<Storage>
 {
 
 public:

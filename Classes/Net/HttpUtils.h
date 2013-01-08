@@ -12,9 +12,10 @@
 #include "cocos2d.h"
 #include "cocos-ext.h"
 #include "Singleton.h"
-#include "libjson.h"
+#include "Net/libjson.h"
 
 USING_NS_CC;
+
 USING_NS_CC_EXT;
 
 typedef void (CCObject::*SEL_HTTPOKCALLBACK)(CCDictionary*);

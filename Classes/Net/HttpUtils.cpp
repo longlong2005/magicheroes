@@ -7,7 +7,7 @@
 //
 
 #include "HttpUtils.h"
-#include "Storage.h"
+#include "Storage/Storage.h"
 
 DELCARE_SINGLETON_MEMBER(HttpUtils);
 

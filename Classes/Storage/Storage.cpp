@@ -7,7 +7,7 @@
 //
 
 #include "Storage.h"
-#include "stdio.h"
+//#include "stdio.h"
 
 DELCARE_SINGLETON_MEMBER(Storage);
 

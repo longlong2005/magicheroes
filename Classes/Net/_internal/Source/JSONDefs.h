@@ -142,7 +142,7 @@ typedef void (*json_free_t)(void *);
     typedef void * (*json_malloc_t)(unsigned long);
     typedef void * (*json_realloc_t)(void *, unsigned long);
 #endif
-
+/*
 #ifdef JSON_DEBUG
     #ifdef NDEBUG
 	   #ifdef __GNUC__
@@ -160,7 +160,7 @@ typedef void (*json_free_t)(void *);
 	   #endif
 	#endif
 #endif
-
+*/
 #ifdef JSON_UNIT_TEST
     #define JSON_PRIVATE public:
     #define JSON_PROTECTED public:
