@@ -355,6 +355,7 @@ float BattleField::getPositionXByColumn(int column)
 
 GridIndex BattleField::getIndexByPosition(CCPoint point)
 {
+    CCLog("getRowByPosition1111111:%d", getRowByPosition(point.y));
     return GridIndexMake(getColumnByPosition(point.x), getRowByPosition(point.y));
 }
 
@@ -424,6 +425,7 @@ bool BattleField::getEnableGridIndex(int &column, int &row)
 
 //AttackerField///////////////////////////////////////////////////////////////////////////////////////////////
 AttackerField::AttackerField()
+    : soldierChanged(false)
 {
     GLOBAL->Attackers = allSoldiers;
 
@@ -494,7 +496,9 @@ bool AttackerField::ccTouchBegan(CCTouch* touch, CCEvent* event)
         return false;
 
     GridIndex currIndex = getIndexByPosition(touchPoint);
+CCLog("Grid index x:%d, y:%d", currIndex.column, currIndex.row);
     Soldier* soldier = NULL;
+    soldierChanged = false;
 
     if (!touchedSoldier)
     {
@@ -506,6 +510,8 @@ bool AttackerField::ccTouchBegan(CCTouch* touch, CCEvent* event)
         reorderChild(soldier, FIELD_ROW_MAX * 2);
         touchedSoldier = soldier;
         lastIndex = currIndex;
+
+        schedule(schedule_selector(AttackerField::changeSelectedSoldier), 0, 0, 1.5f);
     }
 
     return true;
@@ -518,37 +524,38 @@ void AttackerField::ccTouchMoved(CCTouch* touch, CCEvent* event)
     if (!boundingBox().containsPoint(touchPoint))
         return;
 
-    //if (touchedSoldier && touchedSoldier->isSelected())
-    //{
-    //    GridIndex currIndex = getIndexByPosition(touchPoint);
+    if (touchedSoldier && soldierChanged)
+    {
+        GridIndex currIndex = getIndexByPosition(touchPoint);
 
-    //    if (abs(lastIndex.column - currIndex.column) >= 1)
-    //    {
-    //        //set game state 
-    //        if (movedSoldiers->count() > 0)
-    //            movedSoldiers->removeAllObjects();
+        if (abs(lastIndex.column - currIndex.column) >= 1)
+        {
+            //set game state 
+            if (movedSoldiers->count() > 0)
+                movedSoldiers->removeAllObjects();
 
-    //        if (needToRearrange->count() > 0)
-    //            needToRearrange->removeAllObjects();
+            if (needToRearrange->count() > 0)
+                needToRearrange->removeAllObjects();
 
-    //        removeSoldier(touchedSoldier);
-    //        this->removeChild(touchedSoldier, false);
+            removeSoldier(touchedSoldier);
+            removeChild(touchedSoldier, false);
 
-    //        touchedSoldier = NULL;
-    //    }
-    //    else
-    //    {
-    //        Soldier* soldier = getSoldierByIndex(currIndex);
-    //        if (!soldier || !soldier->isAlone())
-    //            return;
+            touchedSoldier = NULL;
 
-    //        soldier->selected();
-    //        reorderChild(soldier, FIELD_ROW_MAX * 2);
-    //        touchedSoldier->stand();
-    //        touchedSoldier = soldier;
-    //        lastIndex = currIndex;
-    //    }
-    //}
+            reformSoldierInColumn(lastIndex.column);
+
+            Soldier** soldiers = soldiersInColumn(lastIndex.column);
+            for (int i = lastIndex.row; i < FIELD_ROW_MAX; i++)
+            {
+                if (!soldiers[i])
+                    continue;
+                soldiers[i]->moveTo(getPositionByIndex(soldiers[i]->getGridIndex()), 0.2f);
+
+                movedSoldiers->addObject(soldiers[i]);
+                needToRearrange->addObject(soldiers[i]);
+            }
+        }
+    }
 }
 
 void AttackerField::ccTouchEnded(CCTouch* touch, CCEvent* event)
@@ -557,11 +564,21 @@ void AttackerField::ccTouchEnded(CCTouch* touch, CCEvent* event)
     if (!boundingBox().containsPoint(touchPoint))
         return;
 
+    unschedule(schedule_selector(AttackerField::changeSelectedSoldier));
+
     GridIndex currIndex = getIndexByPosition(touchPoint);
     Soldier* soldier = NULL;
 
     if (touchedSoldier)
     {
+        if (soldierChanged)
+        {
+            touchedSoldier->stand();
+            touchedSoldier = NULL;
+
+            return;
+        }
+
         if (touchedSoldier->isSelected())
         {
             touchedSoldier->moveTo(CCPointMake(touchedSoldier->getPosition().x, -100), 0.2f);
@@ -605,7 +622,27 @@ float AttackerField::getPositionYByRow(int row)
 
 int AttackerField::getRowByPosition(float y)
 {
-    return FIELD_ROW_MAX - (y - origin.y) / FIELD_GRID_HEIGHT - 1;
+    return FIELD_ROW_MAX - 1 - (int)((y - origin.y) / FIELD_GRID_HEIGHT);
+}
+
+void AttackerField::changeSelectedSoldier(float dt)
+{
+CCLog("soldier changed!");
+
+if (touchedSoldier)
+{
+    touchedSoldier->stand();
+    reorderChild(touchedSoldier, FIELD_ROW_MAX);
+
+    Soldier* soldier = getSoldierByIndex(lastIndex);
+    if (soldier)
+    {
+        soldier->selected();
+        reorderChild(soldier, FIELD_ROW_MAX * 2);
+        touchedSoldier = soldier;
+        soldierChanged = true;
+    }
+}
 }
 
 void AttackerField::onAtkSoldierCompleteMove(CCObject* obj)
@@ -682,6 +719,10 @@ float DefenderField::getPositionYByRow(int row)
 
 int DefenderField::getRowByPosition(float y)
 {
-    return (origin.y - y) / FIELD_GRID_HEIGHT;
+    int row = (origin.y - y) / FIELD_GRID_HEIGHT;
+    if ((int)(origin.y - y) % FIELD_GRID_HEIGHT > 0)
+        row++;
+
+    return row;
 }
 

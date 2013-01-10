@@ -90,7 +90,11 @@ protected:
 
     bool init();
 
+    void changeSelectedSoldier(float dt);
+
     void onAtkSoldierCompleteMove(CCObject* obj);
+
+    bool soldierChanged;
 
 protected:
 	AttackerField();
