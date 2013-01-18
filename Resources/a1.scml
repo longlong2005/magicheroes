@@ -80,16 +80,16 @@
                 </key>
             </timeline>
             <timeline id="1">
-                <key id="0">
+                <key id="0" spin="0">
                     <object folder="0" file="1" x="-14.099099" y="20.153153"/>
                 </key>
-                <key id="1" time="200" spin="0">
+                <key id="1" time="200" spin="-1">
                     <object folder="0" file="1" x="-14.099099" y="20.153153"/>
                 </key>
-                <key id="2" time="400" spin="0">
-                    <object folder="0" file="1" x="-14.099099" y="20.153153"/>
+                <key id="2" time="400">
+                    <object folder="0" file="1" x="-14.099099" y="20.153153" pivot_x="1" pivot_y="1" angle="265.6"/>
                 </key>
-                <key id="3" time="600" spin="-1">
+                <key id="3" time="600" spin="0">
                     <object folder="0" file="1" x="-14.099099" y="20.153153"/>
                 </key>
             </timeline>
