@@ -57,20 +57,58 @@ void GameMainMenu::testAnimation(CCObject* sender)
 {
     CCScene* scene = CCScene::create();
     
-    CCSpriteFrameCache::sharedSpriteFrameCache()->addSpriteFramesWithFile( "monster.plist" );
-    CCSpriteFrameCache::sharedSpriteFrameCache()->addSpriteFramesWithFile( "s1/s1.plist" );
-    SpriterNode *n1 = SpriterNode::create( "s1/a1.scml", "s1/s1.png" );
-    //SpriterNode *n2 = SpriterNode::create( "monster.scml", "monster.png" );
-
-    n1->setPosition( ccp(160, 100) );
-    n1->setScale(3);
-    n1->runAnimation( "daiji" );
+    CCNodeLoaderLibrary * ccNodeLoaderLibrary = CCNodeLoaderLibrary::newDefaultCCNodeLoaderLibrary();
+    
+    /* Create an autorelease CCBReader. */
+    cocos2d::extension::CCBReader * ccbReader = new cocos2d::extension::CCBReader(ccNodeLoaderLibrary);
+    
+    /* Read a ccbi file. */
+    CCNode * node = ccbReader->readNodeGraphFromFile("aniTest.ccbi",this);
+    
+    node->setPosition(100, 200);
+    
+    if(node != NULL) {
+        this->addChild(node);
+        //获取所有的动作序列
+        CCArray* allSeq = ccbReader->getAnimationManager()->getSequences();
+        
+        for (int i=0; i<allSeq->count(); i++) {
+            //获取到每一个Seq
+            CCBSequence* everySeq = (CCBSequence*)allSeq->objectAtIndex(i);
+            //获取每个序列动作周期、名字以及id
+            everySeq->getDuration();
+            everySeq->getName();
+            everySeq->getSequenceId();
+        }
+        
+        ccbReader->getAnimationManager()->runAnimations("Default Timeline");
+    }
+    
+    ccbReader->release();
+    
+////    CCSpriteFrameCache::sharedSpriteFrameCache()->addSpriteFramesWithFile( "monster.plist" );
+//    CCSpriteFrameCache::sharedSpriteFrameCache()->addSpriteFramesWithFile( "s1.plist" );
+//    SpriterNode *n1 = SpriterNode::create( "a1.scml", "s1.png" );
+//    //SpriterNode *n2 = SpriterNode::create( "monster.scml", "monster.png" );
+//
+//    n1->setPosition( ccp(260, 200) );
+//    n1->setScale(3);
+//    n1->runAnimation( "daiji" );
+    
+//    //    CCSpriteFrameCache::sharedSpriteFrameCache()->addSpriteFramesWithFile( "monster.plist" );
+//    CCSpriteFrameCache::sharedSpriteFrameCache()->addSpriteFramesWithFile( "monster.plist" );
+//    SpriterNode *n1 = SpriterNode::create( "Example.SCML", "monster.png" );
+//    //SpriterNode *n2 = SpriterNode::create( "monster.scml", "monster.png" );
+//    
+//    n1->setPosition( ccp(260, 200) );
+//    n1->setScale(3);
+//    n1->runAnimation( "Idle" );
 
     //n2->setPosition( ccp(500, 100) );
     //n2->setScale(0.8f);
     //n2->runAnimation( "Idle" );
     
-    scene->addChild( n1 );
+//    scene->addChild( n1 );
     //scene->addChild( n2);
 
             //n1->setIsFlipX(false);

@@ -523,6 +523,10 @@ void SpriterNode::initObjects()
                         {
                             SpriterConfigNode *key = animConfig->getChildrenAt(m);
                             SpriterMainlineKey *mainlineKey = SpriterMainlineKey::create();
+                            
+                            //added by yxwang
+                            mainlineKey->setStartsAt(key->getPropertyCCString("time")->doubleValue());
+                            //end added by yxwang
 
                             for (int n=0; n<key->getChildrenCount(); n++)
                             {
@@ -557,9 +561,22 @@ void SpriterNode::initObjects()
                                 timelineKey->setPostion(
                                     ccp(object->getPropertyCCString("x")->doubleValue(),
                                     object->getPropertyCCString("y")->doubleValue()) );
+                                
+                                //changed by yxwang
+//                                timelineKey->setAnchorPoint(
+//                                    ccp(object->getPropertyCCString("pivot_x")->doubleValue(),
+//                                    object->getPropertyCCString("pivot_y")->doubleValue()));
+                                
+                                double pivoty = object->getPropertyCCString("pivot_y")->doubleValue();
+                                if( pivoty > -0.0000001 && pivoty < 0.0000001 )
+                                {
+                                    pivoty = 1.0;
+                                }
                                 timelineKey->setAnchorPoint(
-                                    ccp(object->getPropertyCCString("pivot_x")->doubleValue(),
-                                    object->getPropertyCCString("pivot_y")->doubleValue()));
+                                                            ccp(object->getPropertyCCString("pivot_x")->doubleValue(),
+                                                                pivoty));
+                                //end changed by yxwang
+                                
                                 timelineKey->setStartsAt(key->getPropertyCCString("time")->doubleValue());
                                 timelineKey->setRotation(object->getPropertyCCString("angle")->doubleValue());
 
@@ -670,11 +687,11 @@ void SpriterNode::update(float dt)
 
     _duration += dt;
 
-    int milliseconds = _duration * 10000 * _playbackSpeed;
-    int startTime = _curKeyFrame->getStartsAt();
-    int endTime = _nextKeyFrame->getStartsAt();
+    double milliseconds = _duration * 1000 * _playbackSpeed;
+    double startTime = _curKeyFrame->getStartsAt();
+    double endTime = _nextKeyFrame->getStartsAt();
 
-    if (endTime/* == 0.0f*/)
+    if (endTime == 0.0f)
     {
         endTime = _curAnimation->getDuration();
     }
@@ -689,8 +706,8 @@ void SpriterNode::update(float dt)
     }
     if (milliseconds > _curAnimation->getDuration())
     {
-        _duration -= milliseconds * 0.0001/_playbackSpeed;
-        milliseconds -= 10000 * _playbackSpeed;
+        _duration -= milliseconds * 0.001/_playbackSpeed;
+        milliseconds -= 1000 * _playbackSpeed;
     }
 
     for (unsigned int i=0; i<_spriteNodes->count(); i++)
@@ -740,10 +757,13 @@ void SpriterNode::update(float dt)
             }
         }
 
+        float hOff = 0;//sprite->getTextureRect().size.height * curTimelineKey->getAnchorPoint().y;
         sprite->setVisible(true);
         sprite->setPosition(CCPointMake(
             interpolate(curTimelineKey->getPostion().x, nextTimelineKey->getPostion().x, interpolationFactor),
-            interpolate(curTimelineKey->getPostion().y, nextTimelineKey->getPostion().y, interpolationFactor)));
+            interpolate(curTimelineKey->getPostion().y, nextTimelineKey->getPostion().y, interpolationFactor) - hOff));
+        
+        CCLOG("%d posx:%f, posy:%f",i,sprite->getPosition().x,sprite->getPosition().y);
 
         sprite->setAnchorPoint(CCPointMake(
             interpolate(curTimelineKey->getAnchorPoint().x, nextTimelineKey->getAnchorPoint().x, interpolationFactor),
@@ -755,30 +775,16 @@ void SpriterNode::update(float dt)
         double nextRotation = nextTimelineKey->getRotation();
         double curRotation = curTimelineKey->getRotation();
 
-        //        if (curTimelineKey->getSpin() == 1 && (nextRotation - curRotation) < 0)
-        //        {
-        //            nextRotation += 360;
-        //        }
-        //        else if(curTimelineKey->getSpin() == -1 && (nextRotation - curRotation ) >0)
-        //        {
-        //            nextRotation -= 360;
-        //        }
-        //        
-        //        sprite->setRotation( - interpolate(curRotation, nextRotation, interpolationFactor) );
-        if( i == 5 ){
-            sprite->setRotation( -90 );
-        }else
-            sprite->setRotation( curRotation );
-        if( i == 7 )
+        if (curTimelineKey->getSpin() == 1 && (nextRotation - curRotation) < 0)
         {
-            sprite->setScaleX(-1);
+                nextRotation += 360;
         }
-
         else if(curTimelineKey->getSpin() == -1 && (nextRotation - curRotation ) >0)
         {
             nextRotation -= 360;
         }
-        /*
+
+        
         // check to flip
         if(_isFlipX)
         {
@@ -792,8 +798,9 @@ void SpriterNode::update(float dt)
         nextRotation *= -1;
         curRotation *= -1;
         }
-        */
+        
         sprite->setRotation( - interpolate(curRotation, nextRotation, interpolationFactor) );
+        
     }
 }
 
