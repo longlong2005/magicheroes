@@ -46,7 +46,7 @@ bool    Storage::saveFile(const char *fileName, const char *data, int dataLen)
     return true;
 }
 
-unsigned char*   Storage::readFile(const char* fileName, unsigned long *size)
+unsigned char*   Storage::readSavedFile(const char* fileName, unsigned long *size)
 {
     CCFileUtils *fileUtils = CCFileUtils::sharedFileUtils();
     std::string path= fileUtils->getWriteablePath();
@@ -56,7 +56,7 @@ unsigned char*   Storage::readFile(const char* fileName, unsigned long *size)
     return fileUtils->getFileData(cPath, "r", size);
 }
 
-bool    Storage::removeFile(const char *fileName)
+bool    Storage::removeSavedFile(const char *fileName)
 {
     CCFileUtils *fileUtils = CCFileUtils::sharedFileUtils();
     std::string path= fileUtils->getWriteablePath();
@@ -67,8 +67,9 @@ bool    Storage::removeFile(const char *fileName)
     
 }
 
-unsigned    char*   Storage::readFileFromPackage(const char* fileName, unsigned long *size)
+unsigned    char*   Storage::readPackageFile(const char* fileName, unsigned long *size)
 {
     CCFileUtils *fileUtils = CCFileUtils::sharedFileUtils();
-    return fileUtils->getFileData(fileName, "r", size);
+    const char *path = fileUtils->fullPathFromRelativePath(fileName);
+    return fileUtils->getFileData(path, "r", size);
 }

@@ -15,6 +15,7 @@ public:
     void testBattle(CCObject* sender);
     void testAnimation(CCObject* sender);
     void testHttp(CCObject* sender);
+    void testStr(CCObject* sender);
     void onQuit(CCObject* sender);
     
     void    getOk(CCDictionary*ok);

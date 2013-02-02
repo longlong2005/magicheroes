@@ -20,10 +20,10 @@ class Storage : public Singleton<Storage>
 public:
     
     bool    saveFile(const char *fileName, const char *data, int dataLen);
-    bool    removeFile(const char *fileName);
+    bool    removeSavedFile(const char *fileName);
     
-    unsigned    char*   readFile(const char* fileName, unsigned long *size);
-    unsigned    char*   readFileFromPackage(const char* fileName, unsigned long *size);
+    unsigned    char*   readSavedFile(const char* fileName, unsigned long *size);
+    unsigned    char*   readPackageFile(const char* fileName, unsigned long *size);
     
     DECLARE_SINGLETON(Storage)
 };

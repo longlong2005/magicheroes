@@ -2,6 +2,7 @@
 #include "BattleScene.h"
 #include "Spriter/SpriterNode.h"
 #include "Net/HttpUtils.h"
+#include "Data/StrParser.h"
 
 GameMainMenu::GameMainMenu()
 {
@@ -16,9 +17,10 @@ GameMainMenu::GameMainMenu()
     CCMenuItemFont* item1 = CCMenuItemFont::create("Test Battle", this, menu_selector(GameMainMenu::testBattle));
     CCMenuItemFont* item2 = CCMenuItemFont::create("Test Animation", this, menu_selector(GameMainMenu::testAnimation));
     CCMenuItemFont* item3 = CCMenuItemFont::create("Test Http", this, menu_selector(GameMainMenu::testHttp));
+    CCMenuItemFont* item5 = CCMenuItemFont::create("Test StrParser", this, menu_selector(GameMainMenu::testStr));
     CCMenuItemFont* item4 = CCMenuItemFont::create("Quit", this, menu_selector(GameMainMenu::onQuit));
     
-    CCMenu* menu = CCMenu::create(item1, item2, item3, item4, NULL);
+    CCMenu* menu = CCMenu::create(item1, item2, item3, item5, item4, NULL);
     menu->alignItemsVertically();
     
     addChild( menu );
@@ -125,6 +127,26 @@ void GameMainMenu::testHttp(CCObject* sender)
     gp.error = httpError_selector(GameMainMenu::getError);
 //    HTTP->get(&gp);
     HTTP->download(&gp, "abctest");
+}
+
+void GameMainMenu::testStr(CCObject* sender)
+{
+    StrParser parser;
+    CCDictionary dic;
+    parser.parsePackageFile("s_en.txt", &dic);
+    CCArray *allKeys = dic.allKeys();
+    CCObject *key = NULL;
+    CCObject *value = NULL;
+    const char *ckey;
+    const char *cvalue;
+    CCARRAY_FOREACH(allKeys, key)
+    {
+        ckey = ((CCString*)key)->getCString();
+        std::string strKey(ckey);
+        value = dic.objectForKey(strKey);
+        cvalue = ((CCString*)value)->getCString();
+        printf("%s:%s\n",ckey, cvalue);
+    }
 }
 
 void    GameMainMenu::getOk(CCDictionary*ok)
