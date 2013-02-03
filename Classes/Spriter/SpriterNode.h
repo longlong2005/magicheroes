@@ -193,8 +193,8 @@ public:
     
     void runAnimation(const char* animation);
     
-    bool getIsFlipX();
-    void setIsFlipX(bool b);
+//    bool getIsFlipX();
+//    void setIsFlipX(bool b);
     
     /** pSpeed is in percentage, it can be
         1.0 (Normal Speed)
@@ -235,7 +235,7 @@ private:
     void update(float dt);
     double interpolate(double a, double b, double f);
 
-    bool _isFlipX;
+//    bool _isFlipX;
     double _playbackSpeed;
 };
 

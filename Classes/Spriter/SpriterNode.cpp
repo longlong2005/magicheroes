@@ -721,15 +721,14 @@ void SpriterNode::update(float dt)
     for (unsigned int i=0; i<_curKeyFrame->getObjectRefs()->count(); i++)
     {
         SpriterObjectRef *curObjectRef = (SpriterObjectRef*)_curKeyFrame->getObjectRefs()->objectAtIndex(i);
-        SpriterObjectRef *nextObjectRef = (SpriterObjectRef*)_nextKeyFrame->getObjectRefs()->objectAtIndex(i);
+//        SpriterObjectRef *nextObjectRef = (SpriterObjectRef*)_nextKeyFrame->getObjectRefs()->objectAtIndex(i);
 
         SpriterTimeline *objectTimeline = (SpriterTimeline*)_curAnimation->getTimelines()->objectAtIndex(curObjectRef->getTimelineId());
 
         SpriterTimelineKey *curTimelineKey = (SpriterTimelineKey*)objectTimeline->getKeys()->objectAtIndex(curObjectRef->getTimelineKey());
-        SpriterTimelineKey *nextTimelineKey = (SpriterTimelineKey*)objectTimeline->getKeys()->objectAtIndex(nextObjectRef->getTimelineKey());
+//        SpriterTimelineKey *nextTimelineKey = (SpriterTimelineKey*)objectTimeline->getKeys()->objectAtIndex(nextObjectRef->getTimelineKey());
 
         const char *displayFrameName = ((CCString*)_files->objectForKey(CCString::createWithFormat("%d-%d", curTimelineKey->getFolderId(), curTimelineKey->getFileId())->getCString()))->getCString();
-        printf("%d->%s\n",i,displayFrameName);
 
         CCSprite *sprite;
 
@@ -757,50 +756,92 @@ void SpriterNode::update(float dt)
             }
         }
 
-        float hOff = 0;//sprite->getTextureRect().size.height * curTimelineKey->getAnchorPoint().y;
         sprite->setVisible(true);
-        sprite->setPosition(CCPointMake(
-            interpolate(curTimelineKey->getPostion().x, nextTimelineKey->getPostion().x, interpolationFactor),
-            interpolate(curTimelineKey->getPostion().y, nextTimelineKey->getPostion().y, interpolationFactor) - hOff));
         
-        CCLOG("%d posx:%f, posy:%f",i,sprite->getPosition().x,sprite->getPosition().y);
-
-        sprite->setAnchorPoint(CCPointMake(
-            interpolate(curTimelineKey->getAnchorPoint().x, nextTimelineKey->getAnchorPoint().x, interpolationFactor),
-            interpolate(curTimelineKey->getAnchorPoint().y, nextTimelineKey->getAnchorPoint().y, interpolationFactor)));
-
-        sprite->setScaleX(interpolate(curTimelineKey->getScaleX(), nextTimelineKey->getScaleX(), interpolationFactor));
-        sprite->setScaleY(interpolate(curTimelineKey->getScaleY(), nextTimelineKey->getScaleY(), interpolationFactor));
-
-        double nextRotation = nextTimelineKey->getRotation();
-        double curRotation = curTimelineKey->getRotation();
-
-        if (curTimelineKey->getSpin() == 1 && (nextRotation - curRotation) < 0)
-        {
-                nextRotation += 360;
-        }
-        else if(curTimelineKey->getSpin() == -1 && (nextRotation - curRotation ) >0)
-        {
-            nextRotation -= 360;
-        }
-
+        SpriterTimelineKey *nextTimelineKey = NULL;
         
-        // check to flip
-        if(_isFlipX)
+        if( i < _nextKeyFrame->getObjectRefs()->count())
         {
-        // position
-        sprite->setPosition(CCPointMake(-sprite->getPosition().x, sprite->getPosition().y));
-
-        // scale
-        sprite->setScaleX(-sprite->getScaleX());
-
-        // rotation
-        nextRotation *= -1;
-        curRotation *= -1;
+            SpriterObjectRef *nextObjectRef = (SpriterObjectRef*)_nextKeyFrame->getObjectRefs()->objectAtIndex(i);
+            SpriterTimeline *nextObjectTimeline = (SpriterTimeline*)_curAnimation->getTimelines()->objectAtIndex(nextObjectRef->getTimelineId());
+            nextTimelineKey = (SpriterTimelineKey*)nextObjectTimeline->getKeys()->objectAtIndex(nextObjectRef->getTimelineKey());
+            
+            const char *nextDisplayFrameName = ((CCString*)_files->objectForKey(CCString::createWithFormat("%d-%d", nextTimelineKey->getFolderId(), nextTimelineKey->getFileId())->getCString()))->getCString();
+            
+            if( strcmp(displayFrameName, nextDisplayFrameName) != 0 )
+            {
+                
+                nextTimelineKey = NULL;
+                for (unsigned int j=0; j<_nextKeyFrame->getObjectRefs()->count(); j++)
+                {
+                    if( j != i )
+                    {
+                        nextObjectRef = (SpriterObjectRef*)_nextKeyFrame->getObjectRefs()->objectAtIndex(j);
+                        nextObjectTimeline = (SpriterTimeline*)_curAnimation->getTimelines()->objectAtIndex(nextObjectRef->getTimelineId());
+                        nextTimelineKey = (SpriterTimelineKey*)nextObjectTimeline->getKeys()->objectAtIndex(nextObjectRef->getTimelineKey());
+                        nextDisplayFrameName = ((CCString*)_files->objectForKey(CCString::createWithFormat("%d-%d", nextTimelineKey->getFolderId(), nextTimelineKey->getFileId())->getCString()))->getCString();
+                        if( strcmp(displayFrameName, nextDisplayFrameName) != 0 )
+                        {
+                            nextTimelineKey = NULL;
+                        }else{
+                            break;
+                        }
+                    }
+                }
+            }
         }
         
-        sprite->setRotation( - interpolate(curRotation, nextRotation, interpolationFactor) );
+        if( nextTimelineKey == NULL ){
+            sprite->setPosition(CCPointMake(curTimelineKey->getPostion().x, curTimelineKey->getPostion().y));
+            sprite->setAnchorPoint(CCPointMake(curTimelineKey->getAnchorPoint().x, curTimelineKey->getAnchorPoint().y));
+            sprite->setScaleX(curTimelineKey->getScaleX());
+            sprite->setScaleY(curTimelineKey->getScaleY());
+            sprite->setRotation( curTimelineKey->getRotation() * (curTimelineKey->getSpin()==-1 ? -1 : 1 ) );
+        }else{            
+            
+            sprite->setPosition(CCPointMake(
+                interpolate(curTimelineKey->getPostion().x, nextTimelineKey->getPostion().x, interpolationFactor),
+                interpolate(curTimelineKey->getPostion().y, nextTimelineKey->getPostion().y, interpolationFactor)));
+
+            sprite->setAnchorPoint(CCPointMake(
+                interpolate(curTimelineKey->getAnchorPoint().x, nextTimelineKey->getAnchorPoint().x, interpolationFactor),
+                interpolate(curTimelineKey->getAnchorPoint().y, nextTimelineKey->getAnchorPoint().y, interpolationFactor)));
+
+            sprite->setScaleX(interpolate(curTimelineKey->getScaleX(), nextTimelineKey->getScaleX(), interpolationFactor));
+            sprite->setScaleY(interpolate(curTimelineKey->getScaleY(), nextTimelineKey->getScaleY(), interpolationFactor));
+
+            double nextRotation = nextTimelineKey->getRotation();
+            double curRotation = curTimelineKey->getRotation();
+
+    //        if (curTimelineKey->getSpin() == 1 && (nextRotation - curRotation) < 0)
+            if (curTimelineKey->getSpin() == 0 && (nextRotation - curRotation) < 0)
+            {
+                    nextRotation += 360;
+            }
+            else if(curTimelineKey->getSpin() == -1 && (nextRotation - curRotation ) >0)
+            {
+                nextRotation -= 360;
+            }
+
+            
+    //        // check to flip
+    //        if(_isFlipX)
+    //        {
+    //        // position
+    //        sprite->setPosition(CCPointMake(-sprite->getPosition().x, sprite->getPosition().y));
+    //
+    //        // scale
+    //        sprite->setScaleX(-sprite->getScaleX());
+    //
+    //        // rotation
+    //        nextRotation *= -1;
+    //        curRotation *= -1;
+    //        }
+            
+            sprite->setRotation( - interpolate(curRotation, nextRotation, interpolationFactor) );
         
+        }
+    
     }
 }
 
@@ -825,13 +866,13 @@ void SpriterNode::setPlaybackSpeed(double pSpeed)
         _playbackSpeed = pSpeed;
 }
 
-bool SpriterNode::getIsFlipX()
-{
-    return _isFlipX;
-}
+//bool SpriterNode::getIsFlipX()
+//{
+//    return _isFlipX;
+//}
 
-void SpriterNode::setIsFlipX(bool b)
-{
-    if(b != _isFlipX)
-        _isFlipX = b;
-}
+//void SpriterNode::setIsFlipX(bool b)
+//{
+//    if(b != _isFlipX)
+//        _isFlipX = b;
+//}
